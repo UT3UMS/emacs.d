@@ -246,6 +246,9 @@ I was using =multi-term= along with =helm-mt= for ages. But Author suggests [[ht
   ;; http://stackoverflow.com/questions/35286203/exec-path-from-shell-message-when-starting-emacs
   (when (string= system-type "gnu/linux")
     (exec-path-from-shell-initialize)))
+
+(use-package helm-mt
+  :after multi-term)
 #+END_SRC
 *** Version control
 Magit is the only option here :)
