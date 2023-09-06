@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: clv
+# key: clv
+# --
+console.log(\`hh `(current-kill 0)`\`, `(current-kill 0)`)

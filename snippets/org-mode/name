@@ -1,0 +1,5 @@
+# -*- mode: snippet -*-
+# name: org-NAME
+# key: <n
+# --
+#+NAME: $1

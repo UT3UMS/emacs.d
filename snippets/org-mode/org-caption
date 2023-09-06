@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: org-caption
+# key: <cap
+# --
+#+ATTR_ODT: :scale 0.5
+#+CAPTION: $0

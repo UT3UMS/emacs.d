@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: roam
+# key: <rr
+# --
+:PROPERTIES:
+:ID:       ${1: roam-id}
+:END:
+#+filetags: $0

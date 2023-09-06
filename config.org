@@ -1,0 +1,818 @@
+#+CREATOR: Emacs, Org-mode
+
+#+OPTIONS: ':nil *:t -:t ::t <:t H:4 \n:nil ^:t arch:headline
+#+OPTIONS: author:t broken-links:nil c:nil creator:nil
+#+OPTIONS: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
+#+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:nil tex:t
+#+OPTIONS: timestamp:t title:t toc:t todo:t |:t
+
+#+property: header-args :results silent
+
+#+STARTUP: content
+#+STARTUP: indent
+#+STARTUP: inlineimages
+#+OPTIONS: org-html-postamble:nil
+#+OPTIONS: toc:3
+
+* Global configuration
+** Custom functions
+#+BEGIN_SRC emacs-lisp
+(defun highlight-changes-remove-after-save ()
+  "Remove previous changes after save."
+  (make-local-variable 'after-save-hook)
+  (add-hook 'after-save-hook
+	    (lambda ()
+		(highlight-changes-remove-highlight (point-min) (point-max)))))
+
+(defun toggle-alternative-input-method (method &optional arg interactive)
+  (if arg
+      (toggle-input-method arg interactive)
+    (let ((previous-input-method current-input-method))
+      (when current-input-method
+        (deactivate-input-method))
+      (unless (and previous-input-method
+                   (string= previous-input-method method))
+        (activate-input-method method)))))
+
+(defun reload-alternative-input-methods ()
+  (dolist (config alternative-input-methods)
+    (let ((method (car config)))
+      (global-set-key (cdr config)
+                      `(lambda (&optional arg interactive)
+                         ,(concat "Behaves similar to `toggle-input-method', but uses \""
+                                  method "\" instead of `default-input-method'")
+                         (interactive "P\np")
+                         (toggle-alternative-input-method ,method arg interactive))))))
+
+(defun show-file-name ()
+  "Show the full path file name in the minibuffer."
+  (interactive)
+  (message (buffer-file-name)))
+
+
+(defun sudo-edit (&optional arg)
+  (interactive "P")
+  (if (or arg (not buffer-file-name))
+      (find-file (concat "/sudo:root@localhost:" (ido-read-file-name "File: ")))
+    (find-alternate-file (concat "/sudo:root@localhost:" buffer-file-name))))
+#+END_SRC
+
+** UI and behaviour setup
+*** What to disable
+#+BEGIN_SRC emacs-lisp
+(tooltip-mode      -1)
+(menu-bar-mode     -1)
+(tool-bar-mode     -1)
+(scroll-bar-mode   -1)
+(horizontal-scroll-bar-mode -1)
+(blink-cursor-mode -1)
+#+END_SRC
+*** What to enable
+Need to investigate what's cool can I do with emacs server
+#+BEGIN_SRC emacs-lisp
+(line-number-mode 1)
+(column-number-mode 1)
+(global-visual-line-mode 1) ;; auto breakline
+(server-start) ;; enables emacsclient in console
+#+END_SRC
+*** Setup behaviour of new windows/bell/splash/...
+#+BEGIN_SRC emacs-lisp
+(setq use-dialog-box     nil)
+(setq redisplay-dont-pause t)
+(setq pop-up-frames nil)
+(setq ring-bell-function 'ignore)
+(setq visible-bell t)
+(setq inhibit-splash-screen t)
+(setq inhibit-startup-message t)
+(setq initial-scratch-message nil)
+(setq scroll-preserve-screen-position t)
+(setq switch-to-buffer-preserve-window-point t)
+;; buffers split
+(setq split-height-threshold nil)
+(setq split-width-threshold 160)
+;; file save property
+(setq require-final-newline 't)
+(setq create-lockfiles nil)
+;; disable tabs indent
+(setq indent-tabs-mode nil)
+#+END_SRC
+*** Scrolling
+#+BEGIN_SRC emacs-lisp
+(setq scroll-step               1)
+(setq scroll-margin            5)
+(setq scroll-conservatively 10000)
+#+END_SRC
+*** Short messages
+#+BEGIN_SRC emacs-lisp
+(defalias 'yes-or-no-p 'y-or-n-p)
+#+END_SRC
+*** Global clipboard
+#+BEGIN_SRC emacs-lisp
+(setq x-select-enable-clipboard t)
+(transient-mark-mode 1) ; highlight text selection
+(delete-selection-mode 1) ; delete seleted text when typing
+#+END_SRC
+*** Input methods
+#+BEGIN_SRC emacs-lisp
+(setq alternative-input-methods
+      '(("ukrainian-computer" . [?\C-\\])
+;        ("german-postfix"   . [?\C-\M-|])
+))
+
+(setq default-input-method
+      (caar alternative-input-methods))
+
+(reload-alternative-input-methods)
+#+END_SRC
+*** Custom theme
+I prefer [[https://github.com/greduan/emacs-theme-gruvbox][gruvbox-theme]]
+#+BEGIN_SRC emacs-lisp
+(setq custom-safe-themes t)
+(load-theme 'gruvbox t)
+(load-theme 'gruvbox-dark-hard t)
+#+END_SRC
+
+hint :: to list all fonts on system just use
+#+NAME: list fonts with fontconfig
+#+BEGIN_SRC sh :eval never
+fc-list :mono | awk -F: '{print $2}' | sort -u
+#+END_SRC
+
+Pick the desired font and tune the settings. By <2023-08-30 Wed> I use [[https://github.com/cormullion/juliamono/releases][cormullion/juliamono]] font. Here are other pretty options: [[https://typeof.net/Iosevka/][Iosevka]], [[https://dejavu-fonts.github.io/][DejaVu Fonts]].
+
+#+NAME: font config
+#+BEGIN_SRC emacs-lisp
+;; (set-frame-font "Inconsolata 12" nil t)
+(set-face-attribute 'default nil :font "Iosevka Fixed Medium Extended" :height 110)
+;; (set-face-attribute 'default nil :font "JuliaMono Medium" :height 118)
+#+END_SRC
+*** WAIT Transparency
+Not working though. I believe it's problem with compiling emacs. [[https://kristofferbalintona.me/posts/202206071000/][True Emacs Transparency]]
+#+BEGIN_SRC emacs-lisp
+(set-frame-parameter (selected-frame) 'alpha '(85 50))
+(add-to-list 'default-frame-alist '(alpha 85 50))
+#+END_SRC
+*** Highlight changes
+#+BEGIN_SRC emacs-lisp
+(global-highlight-changes-mode t)
+(set-face-foreground 'highlight-changes nil)
+(set-face-background 'highlight-changes "#382f2f")
+(set-face-foreground 'highlight-changes-delete nil)
+(set-face-background 'highlight-changes-delete "#916868")
+
+;; This is not related to changes, but related to the flow. Let it be here for a bit
+(add-hook 'before-save-hook 'delete-trailing-whitespace)
+(add-hook 'after-save-hook 'highlight-changes-remove-after-save)
+#+END_SRC
+*** Save session
+#+BEGIN_SRC emacs-lisp
+(desktop-save-mode 1)
+(setq savehist-additional-variables
+      '(kill-ring
+        global-mark-ring
+        search-ring
+        regexp-search-ring
+        file-name-history
+        shell-command-history
+        set-variable-value-history
+        regexp-history
+        compile-history
+        w3m-input-url-history
+        pyvenv-workon-history
+        ))
+#+END_SRC
+*** Language & Encoding
+Add UTF8 at the front of the priority list for automatic detection. Set up multilingual environment to use UTF-8. Set default value of various coding systems to UTF-8. [[https://github.com/r0man/.emacs.d][Source]]
+#+BEGIN_SRC emacs-lisp
+(prefer-coding-system 'utf-8)
+(set-language-environment "UTF-8")
+(set-default-coding-systems 'utf-8)
+#+END_SRC
+*** Global automated text manipulation
+**** Auto close parenthesis globaly
+#+BEGIN_SRC emacs-lisp
+  (use-package elec-pair
+    :ensure nil
+    :hook (prog-mode . electric-pair-mode))
+#+END_SRC
+Automatically insert closing delimiter
+#+NAME:syntactic-close
+#+BEGIN_SRC  emacs-lisp
+(use-package syntactic-close
+  :ensure t
+  :bind ("C-c x c" . syntactic-close))
+#+END_SRC
+#+NAME: Highlight parenthesis
+#+BEGIN_SRC emacs-lisp
+(use-package paren
+  :ensure nil
+  :init (setq show-paren-delay 0)
+  :config (show-paren-mode +1))
+#+END_SRC
+
+**** Ligature symbols
++Not sure if I want it. Need to setup font to handle ligatures tho+ +disregard that, it has build in setup fonts command+ disregard this as well, I dont need it
+#+NAME: fira ligatures
+#+BEGIN_SRC  emacs-lisp :eval never
+;; (use-package fira-code-mode
+;;   :custom (fira-code-mode-disabled-ligatures '("[]" "#{" "#(" "#_" "#_(" "x" "+")) ;; List of ligatures to turn off
+;;   :hook prog-mode) ;; Enables fira-code-mode automatically for programming major modes
+#+END_SRC
+*** Autosave and backup files
+[[https://www.emacswiki.org/emacs/ForceBackups][EmacsWiki: Force Backups]] here's a good guide. Meanwhile I'll disable them
+#+NAME: Setup backups
+#+BEGIN_SRC emacs-lisp
+(setq make-backup-files nil)
+#+END_SRC
+* Modes
+** Management
+Modes used mostly everywhere: [[*Version control][interaction with version control]], [[*Helm][custom menues]]
+*** Terminal
+I was using =multi-term= along with =helm-mt= for ages. But Author suggests [[https://github.com/manateelazycat/aweshell][aweshell]] - a multi-term featured eshell. I need to give it a look one day
+#+BEGIN_SRC emacs-lisp
+(use-package multi-term
+  :custom
+  (multi-term-program "/bin/zsh"))
+
+;; Disabling yas here
+(add-hook 'term-mode-hook (lambda()
+            (yas-minor-mode -1)))
+
+;; Load shell variables to emacs
+(use-package exec-path-from-shell
+  :ensure t
+  :config
+  (setq exec-path-from-shell-check-startup-files nil)
+  ;; http://stackoverflow.com/questions/35286203/exec-path-from-shell-message-when-starting-emacs
+  (when (string= system-type "gnu/linux")
+    (exec-path-from-shell-initialize)))
+#+END_SRC
+*** Version control
+Magit is the only option here :)
+#+BEGIN_SRC emacs-lisp
+(use-package magit
+  ;; :init
+  ;; (message "Loading Magit!")
+  ;; :config
+  ;; (message "Loaded Magit!")
+  ;; :bind (("C-x g" . magit-status)
+  ;;        ("C-x C-g" . magit-status))
+  )
+#+END_SRC
+*** DONE Autocompletion
+Here will be company, I believe. Comment it out and set up propperly later. [[https://github.com/emacs-china/Spacemacs-rocks/blob/318caafbf8d71b80ac783a52648723eca73af110/README.org#L993][source]]
+#+BEGIN_SRC emacs-lisp
+(use-package company
+  :bind (:map company-active-map
+              ("C-n" . 'company-select-next)
+              ("C-p" . 'company-select-previous))
+  :init
+  (global-company-mode t)
+  :config
+  (setq company-minimum-prefix-length 3)
+  (setq company-idle-delay 0))
+#+END_SRC
+*** Helm
+The UI framework I stick to
+Used some code from [[https://github.com/arichiardi/emacs.d/blob/136927800873f1d3cc91e90cf7b4a548d0f72d93/packs/dev/foundation-pack/config/helm-conf.el#L85][here]].
+#+BEGIN_SRC emacs-lisp
+(use-package helm
+  :diminish
+  :config
+  ;; https://github.com/syl20bnr/spacemacs/issues/13564
+  ;; another useful command is (delete-dups extended-command-history)
+  (setq history-delete-duplicates t)
+  (when (executable-find "curl")
+    (setq helm-google-suggest-use-curl-p t))
+  (add-to-list 'helm-sources-using-default-as-input 'helm-source-info-bash)
+  (helm-mode 1)
+  (helm-autoresize-mode 1)
+  :custom
+  ;; See https://github.com/bbatsov/prelude/pull/670 for a detailed
+  ;; discussion of these options.
+  (helm-split-window-in-side-p t)
+  (helm-M-x-fuzzy-match t)
+  (helm-recentf-fuzzy-match t)
+  (helm-semantic-fuzzy-match t)
+  (helm-imenu-fuzzy-match t)
+  (helm-move-to-line-cycle-in-source t)
+  (helm-ff-search-library-in-sexp t)
+  (helm-ff-file-name-history-use-recentf t)
+  (helm-commands-using-frame '(completion-at-point
+                               helm-apropos
+                               helm-eshell-prompts
+                               helm-imenu
+                               helm-imenu-in-all-buffers))
+
+  :bind
+    (("M-x"     . helm-M-x) ;; Evaluate functions
+     ("C-x C-f" . helm-find-files) ;; Open or create files
+     ("C-x b"   . helm-mini) ;; Select buffers
+     ("C-x C-b" . helm-buffers-list) ;; Select buffers
+     ("C-x C-r" . helm-recentf) ;; Select recently saved files
+     ("C-c i"   . helm-imenu) ;; Select document heading
+     ("M-y"     . helm-show-kill-ring) ;; Show the kill ring
+     ("M-i"     . helm-swoop)  ;; Swoop
+     ("C-x M-i" . helm-multi-swoop-all)  ;; Swoop
+     ("C-c M-i" . helm-multi-swoop-projectile)  ;; Swoop
+     :map helm-map
+     ("C-z" . helm-select-action)
+     ("<tab>" . helm-execute-persistent-action)))
+
+(use-package helm-ag
+  :after helm
+  :custom
+  (helm-ag-base-command "ag --nocolor --nogroup --ignore-case")
+  (helm-ag-command-option "--all-text")
+  (helm-ag-insert-at-point 'symbol)
+  (helm-ag-use-grep-ignore-list t))
+
+(use-package helm-swoop
+  :after helm
+  :custom
+  (help-swoop-pattern "")
+  (helm-swoop-use-line-number-face t)
+  :bind
+  ("M-i" . helm-swoop))
+#+END_SRC
+*** Projectile
+Project management framework
+#+BEGIN_SRC emacs-lisp
+(use-package projectile
+  ;; :init
+  ;; (setq projectile-cache-file (concat live-tmp-dir "projectile-cache"))
+  ;; (setq projectile-known-projects-file (concat live-tmp-dir "projectile-known-projects.eld"))
+  :delight '(:eval (concat "" (projectile-project-name)))
+  :config
+  ;; Pretty standard to have this setup, setting it globally
+  (projectile-update-project-type 'clojure-cli
+                                  :test-dir "test/"
+                                  :src-dir "src/")
+  (projectile-register-project-type 'yarn '("yarn-lock.json")
+                                    :compile "yarn install"
+                                    :test "yarn test"
+                                    :run "yarn start")
+  (projectile-register-project-type 'npm '("npm-lock.json")
+                                    :compile "npm ci"
+                                    :test "npm test"
+                                    :run "npm run")
+  (setq projectile-globally-ignored-directories
+        (append '("node_modules") projectile-globally-ignored-directories))
+
+  :custom
+  (projectile-mode-line-prefix " P:")
+  (projectile-idle-timer-seconds 60)
+  (projectile-indexing-method 'alien)
+  (projectile-enable-caching t)
+  (projectile-switch-project-action 'projectile-dired)
+  (projectile-remember-window-configs t )
+  (projectile-completion-system 'helm)
+  (projectile-switch-project-action 'helm-projectile)
+  :bind-keymap
+  ("C-c p" . projectile-command-map))
+
+;; (use-package persp-projectile
+;;   :after (projectile perspective))
+
+(projectile-global-mode)
+#+END_SRC
+
+**** helm-pojectile
+[[*Helm][Helm]] menues
+#+BEGIN_SRC emacs-lisp
+(use-package helm-projectile
+  :after helm
+  :config
+  (helm-projectile-on))
+#+END_SRC
+*** TODO Dired
+*** Yasnippet
+#+BEGIN_SRC emacs-lisp
+(use-package yasnippet
+  :hook ((web-mode . yas-minor-mode)
+         (ts-mode . yas-minor-mode)
+         (org-mode . yas-minor-mode))
+  :config
+  (yas-reload-all))
+#+END_SRC
+*** IN-PROGRESS Flycheck
+#+BEGIN_SRC emacs-lisp
+(use-package flycheck
+  :ensure t
+  :init
+  (progn
+    ;; (global-flycheck-mode)
+    ;;(add-hook 'flycheck-mode-hook 'my/use-eslint-from-node-modules)
+    ))
+#+END_SRC
+*** Tramp
+#+BEGIN_SRC emacs-lisp
+;;disable backups of files edited with tramp
+;; (add-to-list 'bkup-backup-directory-info
+;;              (list tramp-file-name-regexp ""))
+(setq tramp-bkup-backup-directory-info  nil)
+
+(setq tramp-ssh-controlmaster-options
+      "-o ControlMaster=auto -o ControlPath='tramp.%%C' -o ControlPersist=no -o ConnectTimeout=1")
+
+;; Pick SSH system agent
+(exec-path-from-shell-copy-env "SSH_AGENT_PID")
+(exec-path-from-shell-copy-env "SSH_AUTH_SOCK")
+#+END_SRC
+*** TODO REST client
+[[https://github.com/jimeh/.emacs.d/blob/38d426d6165caf9b33aa381e4c06f11c9fe21704/modules/tools/siren-restclient.el][source]]
+#+NAME: restclient + helm,
+#+BEGIN_SRC emacs-lisp
+(use-package restclient
+  :ensure t
+  :init
+  ;; limit number of times vars are substituted
+  (setq restclient-vars-max-passes 2)
+  ;; use matching client certificates from ~/.authinfo
+  (setq network-stream-use-client-certificates t)
+  :mode
+  ("\\.restclient\\'" . restclient-mode)
+  ("\\.rest\\'" . restclient-mode)
+  ("\\.http\\'" . restclient-mode)
+
+  :custom
+  (restclient-content-type-modes
+   '(("application/json" . json-mode)
+     ("application/x-yaml" . yaml-mode)
+     ("application/xml" . nxml-mode)
+     ("application/yaml" . yaml-mode)
+     ("image/gif" . image-mode)
+     ("image/jpeg" . image-mode)
+     ("image/jpg" . image-mode)
+     ("image/png" . image-mode)
+     ("text/html" . web-mode)
+     ("text/plain" . text-mode)
+     ("text/xml" . nxml-mode)
+     ("text/yaml" . yaml-mode))))
+
+(use-package restclient-helm
+  :after restclient)
+
+(use-package company-restclient
+  :after restclient
+  :ensure t
+  :config
+  )
+
+(add-to-list 'company-backends 'company-restclient)
+(use-package ob-restclient)
+#+END_SRC
+*** TODO Language Server
+*** Docker integration
+Dokcer is a part of everyday life now. I've seen an integration in VSCode and I liked it. Trying to achieve something alike in emacs.
+#+NAME: docker-integration
+#+BEGIN_SRC  emacs-lisp
+(use-package docker
+  :ensure t
+  :bind ("C-c d" . docker))
+#+END_SRC
+** Web development
+*** Typescript server
+Disabled additional modes, like [[Autocompletion][company]], for this listing. But better be enabled later.
+#+BEGIN_SRC emacs-lisp
+(use-package tide
+  :ensure t
+  :after (typescript-mode) ;;(typescript-mode company flycheck)
+  :hook ((typescript-mode . tide-setup)
+         (typescript-mode . tide-hl-identifier-mode)
+         (before-save . tide-format-before-save))
+  :bind (:map web-mode-map
+         ("C-c j" . tide-jsdoc-template)
+         :map typescript-mode-map
+         ("C-c j" . tide-jsdoc-template))
+  :config
+  (progn
+    ;; (flycheck-mode +1)
+    (setq flycheck-check-syntax-automatically '(save mode-enabled))))
+    ;; (eldoc-mode +1)
+    ;; tide-hl-identifier-mode +1)
+    ;; company is an optional dependency. You have to
+    ;; install it separately via package-install
+    ;; `M-x package-install [ret] company`
+    ;; (company-mode +1))
+
+#+END_SRC
+*** Svelte
+Svelte uses slightly modified JS, but it can interoperate with [[*Web mode][web-mode]]
+#+NAME: svelte initiation
+#+BEGIN_SRC emacs-lisp
+(use-package svelte-mode
+  :defer t
+  :ensure t
+  :mode "\\.svelte\\'")
+#+END_SRC
+*** JSONs
+#+BEGIN_SRC emacs-lisp
+(use-package json-mode
+  :ensure t
+  :mode
+  ("\\.\\(json\\)$" . json-mode)
+  :custom
+  (js-indent-level 2))
+#+END_SRC
+*** YAML
+#+NAME: yaml-mode
+#+BEGIN_SRC emacs-lisp
+(use-package yaml-mode
+  :mode ("\\.\\(yml\\|yaml\\|\\config\\|sls\\)$" . yaml-mode)
+  :ensure yaml-mode
+  :defer t)
+#+END_SRC
+*** Graphql
+#+BEGIN_SRC emacs-lisp
+(use-package graphql-mode
+  :ensure t
+  :mode "\\.graphql\\'")
+  #+END_SRC
+*** Web mode
+My favorite mode for the web-development
+#+BEGIN_SRC emacs-lisp
+(use-package web-mode
+  :ensure t
+  :mode "\\.\\(phtml\\|php\\|[gj]sp\\|as[cp]x\\|erb\\|djhtml\\|html?\\|hbs\\|ejs\\|jade\\|swig\\|tm?pl\\|vue\\|js\\|jsx\\|tsx\\|svelte\\)$"
+  :custom
+  (web-mode-code-indent-offset 2)
+  (web-mode-markup-indent-offset 2)
+  (web-mode-css-indent-offset 2)
+  (web-mode-enable-current-element-highlight t)
+  ;; this magic incantation fixes highlighting of jsx syntax in .js files
+  (web-mode-content-types-alist
+   '(
+     ("jsx" . "\\.js[x]?\\'")
+     ("tsx" . "\\.ts[x]?\\'")))
+  (web-mode-engines-alist
+   '(
+     ("svelte" . "\\.svelte\\'")
+     ("tide". "\\.\\(ts\\|tsx\\)")))
+  :config
+  ;; (progn
+  ;;   (add-hook 'web-mode-hook ;; todo move to hooks
+  ;;             (lambda ()
+  ;;               (when (string-equal "tsx" (file-name-extension buffer-file-name))
+  ;;                 (setup-tide-mode))
+  ;;               (when (string-equal "jsx" (file-name-extension buffer-file-name))
+  ;;                 (setup-tide-mode))
+  ;;               (when (string-equal "js" (file-name-extension buffer-file-name))
+  ;;                 (progn
+  ;;                   (setup-tide-mode)
+  ;;                   (with-eval-after-load 'flycheck
+  ;;                     (flycheck-add-mode 'typescript-tslint 'web-mode)
+  ;;                     (flycheck-add-mode 'javascript-tide 'web-mode))))
+  ;;               (company-mode)
+  ;;               (emmet-mode)
+  ;;               (rainbow-delimiters-mode)
+  ;;               ;; (prettier-js-mode)
+  ;;               )))
+  )
+#+END_SRC
+
+*** Prettier
+#+BEGIN_SRC emacs-lisp
+;; Format HTML, CSS and JavaScript/JSON
+;; Install: npm -g install prettier
+(when (executable-find "prettier")
+  (use-package prettier
+    :diminish
+    :hook ((js-mode js2-mode css-mode sgml-mode web-mode) . prettier-mode)
+    :init (setq prettier-pre-warm 'none)))
+#+END_SRC
+** Org-mode and zettelcasten
+To process this config on startup, =org-mode= is initialized in [[file+emacs:./init.el][=./init.el=]]. Here I'll setup additional components, like =org-roam=
+*** Babel
+Main babel setup
+#+NAME: Babel transpiler
+#+BEGIN_SRC emacs-lisp
+(use-package ob
+  :ensure nil
+  :after org
+  :config
+  (setq org-export-use-babel nil
+        org-confirm-babel-evaluate nil)
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((emacs-lisp . t)
+     (python . t)
+     (clojure . t)
+     (C . t)
+     (typescript .t)
+     (dot . t)
+     (python .t)
+     (shell . t)
+     (scheme . t)
+     (js . t))))
+#+END_SRC
+**** Python
+#+NAME: Enable for Python
+#+BEGIN_SRC emacs-lisp
+(use-package ob-python
+  :ensure nil
+  :after (ob python)
+  :config
+  (setq org-babel-python-command python-shell-interpreter))
+#+END_SRC
+**** Typescript
+#+NAME: TS support
+#+BEGIN_SRC emacs-lisp
+(use-package ob-typescript
+  :ensure t
+  :requires typescript-mode
+  :after org
+  :config
+  (org-babel-do-load-languages 'org-babel-load-languages
+			       (append org-babel-load-languages
+				       '((typescript . t)))))
+#+END_SRC
+*** org-cliplink
+Yanks a =link=, using html>head>title as =description=
+#+BEGIN_SRC emacs-lisp
+(use-package org-cliplink
+  :after org
+  :bind
+  ("C-c i" . 'org-cliplink))
+#+END_SRC
+*** TODO org yank images
+Absolute TODO, I'd like to yank images from clipboard and image is to be stored in certain directory (i believe something like =./files/%buffername%= for ztl)
+*** helm-org
+[[*Helm][Helm]] menues for org actions
+#+BEGIN_SRC emacs-lisp
+(use-package helm-org
+  :after org
+  :config (progn
+            (setq helm-org-headings-fontify t))
+  :bind
+  ("C-c o" . 'helm-org-in-buffer-headings))
+#+END_SRC
+*** Zettelcasten
+Let's set the zettel dir explicitly
+#+BEGIN_SRC emacs-lisp
+(setq ztl-directory (concat org-directory "/ztl"))
+#+END_SRC
+**** org-roam
+Org-roam - the "engine" for zettelcasten
+#+BEGIN_SRC emacs-lisp
+(use-package org-roam
+    :after org
+    :init (setq org-roam-v2-ack t) ;; Acknowledge V2 upgrade
+    :custom
+    (org-roam-directory (file-truename ztl-directory))
+    (org-roam-complete-everywhere t)
+    :config
+    (setq org-roam-capture-templates
+          '(("d" "default" plain "%?"
+             :if-new (file+head "${slug}.org"
+                                "#+OPTIONS: timestamp:t title:t toc:nil todo:t |:t\n#+TITLE: ${title}\n#+DATE: %T\n")
+             :unnarrowed t)))
+
+    (defun org-roam-custom-link-builder (node)
+      (let ((file (org-roam-node-file node)))
+        (concat (file-name-base file) ".html")))
+    (setq org-roam-graph-link-builder 'org-roam-custom-link-builder)
+
+    (org-roam-setup)
+    :bind (("C-c n f" . org-roam-node-find)
+           ("C-c n R" . org-roam-node-random)
+           (:map org-mode-map
+                 (("C-c n i" . org-roam-node-insert)
+                  ("C-c n o" . org-id-get-create)
+                  ("C-c n t" . org-roam-tag-add)
+                  ("C-c n a" . org-roam-alias-add)
+                  ("C-c n l" . org-roam-buffer-toggle)
+                  ("C-c n r" . org-roam-ref-add)
+                  ("C-c n <Tab>" . completion-at-point)))))
+#+END_SRC
+**** org-roam-ui
+And =org-roam-ui= - fancy web interface for roam with a nice graph.
+#+BEGIN_SRC emacs-lisp
+(use-package org-roam-ui
+    :after org-roam
+;;         normally we'd recommend hooking orui after org-roam, but since org-roam does not have
+;;         a hookable mode anymore, you're advised to pick something yourself
+;;         if you don't care about startup time, use
+;;  :hook (after-init . org-roam-ui-mode)
+    :config
+    (setq org-roam-ui-sync-theme t
+          org-roam-ui-follow t
+          org-roam-ui-update-on-save t
+          org-roam-ui-open-on-start nil))
+#+END_SRC
+**** deft
+Deft - alternative "scanner" through ztl directory. Not needed anymore. Disable hotkey
+#+BEGIN_SRC emacs-lisp
+(use-package deft
+  ;; :bind ("C-c d" . deft)		;
+  :commands (deft)
+  :config (setq deft-directory ztl-directory
+                deft-extensions '("txt" "org")
+                deft-recursive t
+                deft-strip-summary-regexp
+                (concat
+                 "\\("
+	         "^:.+:.*\n" ; any line with a :SOMETHING:
+	         "\\|^#\\+.*\n" ; anyline starting with a #+
+	         "\\|^\\*.+.*\n" ; anyline where an asterisk starts the line
+	         "\\)")))
+
+(advice-add 'deft-parse-title :override
+    (lambda (file contents)
+      (if deft-use-filename-as-title
+	  (deft-base-filename file)
+	(let* ((case-fold-search 't)
+	       (begin (string-match "title: " contents))
+	       (end-of-begin (match-end 0))
+	       (end (string-match "\n" contents begin)))
+	  (if begin
+	      (substring contents end-of-begin end)
+	    (format "%s" file))))))
+#+END_SRC
+*** TODO Org export configurations
+General publishing configuration. It's a huge TODO. One day I'll enable [[*org-roam][zettelcasten]] to autoexport
+#+BEGIN_SRC emacs-lisp
+(use-package ox-publish
+  :ensure org
+  :after (org)
+  :config
+  (setq org-publish-project-alist
+      '(
+        ;; Zettel
+        ("ztl"
+         :base-directory 'ztl-directory
+         :base-extension "org"
+         :html-self-link-headlines t
+         :auto-sitemap t
+         :recursive t
+         ;; :sitemap-function roam-sitemap
+         :publishing-function  ox-wk-export-to-wiki
+         :publishing-directory "~/src/zettel.online"
+         :section-number nil
+         :table-of-contents nil
+        ;;  :style "<link rel=\"stylesheet\" href=\"../other/mystyle.cs\" type=\"text/css\">")
+        ;; ("zettel" :components ("zettel-text" "zettel-static"))
+        ;; ("zettel-text"
+
+        ;;  )
+        ;; ("zettel-static"
+
+        ;;  )
+        ))))
+
+;; Gemini mode
+;; (use-package ox-gemini
+;;   :after org)
+
+;; (use-package ox-mediawiki
+;;   :after org)
+
+;; Dependent on `:publishing-function ` of `ox-publish`
+(use-package ox-wk
+  :after org)
+#+END_SRC
+** Other usefull modes
+*** Markdown and github
+#+NAME: enabling markdown mode
+#+BEGIN_SRC emacs-lisp
+(use-package markdown-mode
+  :ensure t
+  :commands (markdown-mode gfm-mode)
+  :mode (("README\\.md\\'" . gfm-mode))
+  ;; optional external md->html converter. maybe i'll use pandoc some day
+  ;; :init (setq markdown-command "/usr/local/bin/multimarkdown")
+  )
+#+END_SRC
+
+#+RESULTS: enabling markdown mode
+: ((\.\(?:md\|markdown\|mkd\|mdown\|mkdn\|mdwn\)\' . markdown-mode) (README\.md\' . gfm-mode) (\(?:\(?:\.\(?:b\(?:\(?:abel\|ower\)rc\)\|json\(?:ld\)?\)\|composer\.lock\)\'\) . json-mode) (\.\(phtml\|php\|[gj]sp\|as[cp]x\|erb\|djhtml\|html?\|hbs\|ejs\|jade\|swig\|tm?pl\|vue\|js\|jsx\|tsx\)$ . web-mode) (\.\(yml\|yaml\|\config\|sls\)$ . yaml-mode) (\.\(json\)$ . json-mode) (\.org$ . org-mode) (\.scad\' . scad-mode) (/\.perlcriticrc\' . conf-mode) (\.at\' . autotest-mode) (\.gql\' . graphql-mode) (\.graphql\' . graphql-mode) (/git-rebase-todo\' . git-rebase-mode) (\.editorconfig\' . editorconfig-conf-mode) (\.\(e?ya?\|ra\)ml\' . yaml-mode) (\.gpg\(~\|\.~[0-9]+~\)?\' nil epa-file) (\.elc\' . elisp-byte-code-mode) (\.zst\' nil jka-compr) (\.dz\' nil jka-compr) (\.xz\' nil jka-compr) (\.lzma\' nil jka-compr) (\.lz\' nil jka-compr) (\.g?z\' nil jka-compr) (\.bz2\' nil jka-compr) (\.Z\' nil jka-compr) (\.vr[hi]?\' . vera-mode) (\(?:\.\(?:rbw?\|ru\|rake\|thor\|jbuilder\|rabl\|gemspec\|podspec\)\|/\(?:Gem\|Rake\|Cap\|Thor\|Puppet\|Berks\|Brew\|Vagrant\|Guard\|Pod\)file\)\' . ruby-mode) (\.re?st\' . rst-mode) (\.py[iw]?\' . python-mode) (\.m\' . octave-maybe-mode) (\.less\' . less-css-mode) (\.scss\' . scss-mode) (\.awk\' . awk-mode) (\.\(u?lpc\|pike\|pmod\(\.in\)?\)\' . pike-mode) (\.idl\' . idl-mode) (\.java\' . java-mode) (\.m\' . objc-mode) (\.ii\' . c++-mode) (\.i\' . c-mode) (\.lex\' . c-mode) (\.y\(acc\)?\' . c-mode) (\.h\' . c-or-c++-mode) (\.c\' . c-mode) (\.\(CC?\|HH?\)\' . c++-mode) (\.[ch]\(pp\|xx\|\+\+\)\' . c++-mode) (\.\(cc\|hh\)\' . c++-mode) (\.\(bat\|cmd\)\' . bat-mode) (\.[sx]?html?\(\.[a-zA-Z_]+\)?\' . mhtml-mode) (\.svgz?\' . image-mode) (\.svgz?\' . xml-mode) (\.x[bp]m\' . image-mode) (\.x[bp]m\' . c-mode) (\.p[bpgn]m\' . image-mode) (\.tiff?\' . image-mode) (\.gif\' . image-mode) (\.png\' . image-mode) (\.jpe?g\' . image-mode) (\.te?xt\' . text-mode) (\.[tT]e[xX]\' . tex-mode) (\.ins\' . tex-mode) (\.ltx\' . latex-mode) (\.dtx\' . doctex-mode) (\.org\' . org-mode) (\.dir-locals\(?:-2\)?\.el\' . lisp-data-mode) (eww-bookmarks\' . lisp-data-mode) (tramp\' . lisp-data-mode) (/archive-contents\' . lisp-data-mode) (places\' . lisp-data-mode) (\.emacs-places\' . lisp-data-mode) (\.el\' . emacs-lisp-mode) (Project\.ede\' . emacs-lisp-mode) (\.\(scm\|stk\|ss\|sch\)\' . scheme-mode) (\.l\' . lisp-mode) (\.li?sp\' . lisp-mode) (\.[fF]\' . fortran-mode) (\.for\' . fortran-mode) (\.p\' . pascal-mode) (\.pas\' . pascal-mode) (\.\(dpr\|DPR\)\' . delphi-mode) (\.\([pP]\([Llm]\|erl\|od\)\|al\)\' . perl-mode) (Imakefile\' . makefile-imake-mode) (Makeppfile\(?:\.mk\)?\' . makefile-makepp-mode) (\.makepp\' . makefile-makepp-mode) (\.mk\' . makefile-gmake-mode) (\.make\' . makefile-gmake-mode) ([Mm]akefile\' . makefile-gmake-mode) (\.am\' . makefile-automake-mode) (\.texinfo\' . texinfo-mode) (\.te?xi\' . texinfo-mode) (\.[sS]\' . asm-mode) (\.asm\' . asm-mode) (\.css\' . css-mode) (\.mixal\' . mixal-mode) (\.gcov\' . compilation-mode) (/\.[a-z0-9-]*gdbinit . gdb-script-mode) (-gdb\.gdb . gdb-script-mode) ([cC]hange\.?[lL]og?\' . change-log-mode) ([cC]hange[lL]og[-.][0-9]+\' . change-log-mode) (\$CHANGE_LOG\$\.TXT . change-log-mode) (\.scm\.[0-9]*\' . scheme-mode) (\.[ckz]?sh\'\|\.shar\'\|/\.z?profile\' . sh-mode) (\.bash\' . sh-mode) (/PKGBUILD\' . sh-mode) (\(/\|\`\)\.\(bash_\(profile\|history\|log\(in\|out\)\)\|z?log\(in\|out\)\)\' . sh-mode) (\(/\|\`\)\.\(shrc\|zshrc\|m?kshrc\|bashrc\|t?cshrc\|esrc\)\' . sh-mode) (\(/\|\`\)\.\([kz]shenv\|xinitrc\|startxrc\|xsession\)\' . sh-mode) (\.m?spec\' . sh-mode) (\.m[mes]\' . nroff-mode) (\.man\' . nroff-mode) (\.sty\' . latex-mode) (\.cl[so]\' . latex-mode) (\.bbl\' . latex-mode) (\.bib\' . bibtex-mode) (\.bst\' . bibtex-style-mode) (\.sql\' . sql-mode) (\(acinclude\|aclocal\|acsite\)\.m4\' . autoconf-mode) (\.m[4c]\' . m4-mode) (\.mf\' . metafont-mode) (\.mp\' . metapost-mode) (\.vhdl?\' . vhdl-mode) (\.article\' . text-mode) (\.letter\' . text-mode) (\.i?tcl\' . tcl-mode) (\.exp\' . tcl-mode) (\.itk\' . tcl-mode) (\.icn\' . icon-mode) (\.sim\' . simula-mode) (\.mss\' . scribe-mode) (\.f9[05]\' . f90-mode) (\.f0[38]\' . f90-mode) (\.indent\.pro\' . fundamental-mode) (\.\(pro\|PRO\)\' . idlwave-mode) (\.srt\' . srecode-template-mode) (\.prolog\' . prolog-mode) (\.tar\' . tar-mode) (\.\(arc\|zip\|lzh\|lha\|zoo\|[jew]ar\|xpi\|rar\|cbr\|7z\|squashfs\|ARC\|ZIP\|LZH\|LHA\|ZOO\|[JEW]AR\|XPI\|RAR\|CBR\|7Z\|SQUASHFS\)\' . archive-mode) (\.oxt\' . archive-mode) (\.\(deb\|[oi]pk\)\' . archive-mode) (\`/tmp/Re . text-mode) (/Message[0-9]*\' . text-mode) (\`/tmp/fol/ . text-mode) (\.oak\' . scheme-mode) (\.sgml?\' . sgml-mode) (\.x[ms]l\' . xml-mode) (\.dbk\' . xml-mode) (\.dtd\' . sgml-mode) (\.ds\(ss\)?l\' . dsssl-mode) (\.js[mx]?\' . javascript-mode) (\.har\' . javascript-mode) (\.json\' . javascript-mode) (\.[ds]?va?h?\' . verilog-mode) (\.by\' . bovine-grammar-mode) (\.wy\' . wisent-grammar-mode) ([:/\]\..*\(emacs\|gnus\|viper\)\' . emacs-lisp-mode) (\`\..*emacs\' . emacs-lisp-mode) ([:/]_emacs\' . emacs-lisp-mode) (/crontab\.X*[0-9]+\' . shell-script-mode) (\.ml\' . lisp-mode) (\.ld[si]?\' . ld-script-mode) (ld\.?script\' . ld-script-mode) (\.xs\' . c-mode) (\.x[abdsru]?[cnw]?\' . ld-script-mode) (\.zone\' . dns-mode) (\.soa\' . dns-mode) (\.asd\' . lisp-mode) (\.\(asn\|mib\|smi\)\' . snmp-mode) (\.\(as\|mi\|sm\)2\' . snmpv2-mode) (\.\(diffs?\|patch\|rej\)\' . diff-mode) (\.\(dif\|pat\)\' . diff-mode) (\.[eE]?[pP][sS]\' . ps-mode) (\.\(?:PDF\|DVI\|OD[FGPST]\|DOCX\|XLSX?\|PPTX?\|pdf\|djvu\|dvi\|od[fgpst]\|docx\|xlsx?\|pptx?\)\' . doc-view-mode-maybe) (configure\.\(ac\|in\)\' . autoconf-mode) (\.s\(v\|iv\|ieve\)\' . sieve-mode) (BROWSE\' . ebrowse-tree-mode) (\.ebrowse\' . ebrowse-tree-mode) (#\*mail\* . mail-mode) (\.g\' . antlr-mode) (\.mod\' . m2-mode) (\.ses\' . ses-mode) (\.docbook\' . sgml-mode) (\.com\' . dcl-mode) (/config\.\(?:bat\|log\)\' . fundamental-mode) (/\.\(authinfo\|netrc\)\' . authinfo-mode) (\.\(?:[iI][nN][iI]\|[lL][sS][tT]\|[rR][eE][gG]\|[sS][yY][sS]\)\' . conf-mode) (\.la\' . conf-unix-mode) (\.ppd\' . conf-ppd-mode) (java.+\.conf\' . conf-javaprop-mode) (\.properties\(?:\.[a-zA-Z0-9._-]+\)?\' . conf-javaprop-mode) (\.toml\' . conf-toml-mode) (\.desktop\' . conf-desktop-mode) (/\.redshift\.conf\' . conf-windows-mode) (\`/etc/\(?:DIR_COLORS\|ethers\|.?fstab\|.*hosts\|lesskey\|login\.?de\(?:fs\|vperm\)\|magic\|mtab\|pam\.d/.*\|permissions\(?:\.d/.+\)?\|protocols\|rpc\|services\)\' . conf-space-mode) (\`/etc/\(?:acpid?/.+\|aliases\(?:\.d/.+\)?\|default/.+\|group-?\|hosts\..+\|inittab\|ksysguarddrc\|opera6rc\|passwd-?\|shadow-?\|sysconfig/.+\)\' . conf-mode) ([cC]hange[lL]og[-.][-0-9a-z]+\' . change-log-mode) (/\.?\(?:gitconfig\|gnokiirc\|hgrc\|kde.*rc\|mime\.types\|wgetrc\)\' . conf-mode) (/\.\(?:asound\|enigma\|fetchmail\|gltron\|gtk\|hxplayer\|mairix\|mbsync\|msmtp\|net\|neverball\|nvidia-settings-\|offlineimap\|qt/.+\|realplayer\|reportbug\|rtorrent\.\|screen\|scummvm\|sversion\|sylpheed/.+\|xmp\)rc\' . conf-mode) (/\.\(?:gdbtkinit\|grip\|mpdconf\|notmuch-config\|orbital/.+txt\|rhosts\|tuxracer/options\)\' . conf-mode) (/\.?X\(?:default\|resource\|re\)s\> . conf-xdefaults-mode) (/X11.+app-defaults/\|\.ad\' . conf-xdefaults-mode) (/X11.+locale/.+/Compose\' . conf-colon-mode) (/X11.+locale/compose\.dir\' . conf-javaprop-mode) (\.~?[0-9]+\.[0-9][-.0-9]*~?\' nil t) (\.\(?:orig\|in\|[bB][aA][kK]\)\' nil t) ([/.]c\(?:on\)?f\(?:i?g\)?\(?:\.[a-zA-Z0-9._-]+\)?\' . conf-mode-maybe) (\.[1-9]\' . nroff-mode) (\.art\' . image-mode) (\.avs\' . image-mode) (\.bmp\' . image-mode) (\.cmyk\' . image-mode) (\.cmyka\' . image-mode) (\.crw\' . image-mode) (\.dcr\' . image-mode) (\.dcx\' . image-mode) (\.dng\' . image-mode) (\.dpx\' . image-mode) (\.fax\' . image-mode) (\.hrz\' . image-mode) (\.icb\' . image-mode) (\.icc\' . image-mode) (\.icm\' . image-mode) (\.ico\' . image-mode) (\.icon\' . image-mode) (\.jbg\' . image-mode) (\.jbig\' . image-mode) (\.jng\' . image-mode) (\.jnx\' . image-mode) (\.miff\' . image-mode) (\.mng\' . image-mode) (\.mvg\' . image-mode) (\.otb\' . image-mode) (\.p7\' . image-mode) (\.pcx\' . image-mode) (\.pdb\' . image-mode) (\.pfa\' . image-mode) (\.pfb\' . image-mode) (\.picon\' . image-mode) (\.pict\' . image-mode) (\.rgb\' . image-mode) (\.rgba\' . image-mode) (\.tga\' . image-mode) (\.wbmp\' . image-mode) (\.webp\' . image-mode) (\.wmf\' . image-mode) (\.wpg\' . image-mode) (\.xcf\' . image-mode) (\.xmp\' . image-mode) (\.xwd\' . image-mode) (\.yuv\' . image-mode) (\.tgz\' . tar-mode) (\.tbz2?\' . tar-mode) (\.txz\' . tar-mode) (\.tzst\' . tar-mode))
+*** SCAD mode
+#+NAME: OpenSCAD files mode
+#+BEGIN_SRC emacs-lisp
+(use-package scad-mode
+  :ensure t
+  :mode "\\.scad\\'"
+  ;; :config
+  ;; (linum-mode 1)
+  )
+#+END_SRC
+
+* Global keys
+Should be mostly moved to :bind
+#+BEGIN_SRC emacs-lisp
+;; -- Window manipulation
+(global-set-key (kbd "S-C-<left>") 'shrink-window-horizontally)
+(global-set-key (kbd "S-C-<right>") 'enlarge-window-horizontally)
+(global-set-key (kbd "S-C-<down>") 'shrink-window)
+(global-set-key (kbd "S-C-<up>") 'enlarge-window)
+
+;; -- X-clipboard
+(global-set-key (kbd "C-M-y") 'x-clipboard-yank)
+
+;; -- Multi-term needs
+(global-set-key (kbd "C-c M-o") 'comint-clear-buffer)
+(global-set-key (kbd "C-x t t") 'helm-mt)
+
+;; -- Custom help maps
+(define-key help-map "\M-f" 'show-file-name)
+#+END_SRC

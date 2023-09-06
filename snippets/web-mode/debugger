@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: dbg
+# key: dbg
+# --
+
+debugger;

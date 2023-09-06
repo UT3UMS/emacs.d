@@ -1,0 +1,19 @@
+# -*- mode: snippet -*-
+# name: node
+# key: node
+# --
+** ${1:name}
+*** Spec
+   #+NAME: $1
+   | name |$1|
+   | Port |${2:port}|
+
+*** Purpouse
+$0
+*** Docker
+#+BEGIN_SRC sh :var spec=$1
+`(current-kill 0)` \
+ -p $2:$2 \
+ --restart=always \
+ --name="$1"
+#+END_SRC
