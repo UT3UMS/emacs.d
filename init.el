@@ -31,7 +31,7 @@
         use-package-expand-minimally t)
 
   ;; Use latest Org
-  (setq org-directory "~/org")
+  (setq org-directory "~/zettel")
   (use-package org
     :mode (("\\.org$" . org-mode))
     :custom

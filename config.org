@@ -149,8 +149,8 @@ Pick the desired font and tune the settings. By <2023-08-30 Wed> I use [[https:/
 *** WAIT Transparency
 Not working though. I believe it's problem with compiling emacs. [[https://kristofferbalintona.me/posts/202206071000/][True Emacs Transparency]]
 #+BEGIN_SRC emacs-lisp
-(set-frame-parameter (selected-frame) 'alpha '(85 50))
-(add-to-list 'default-frame-alist '(alpha 85 50))
+(set-frame-parameter (selected-frame) 'alpha '(100 50))
+(add-to-list 'default-frame-alist '(alpha 100 50))
 #+END_SRC
 *** Highlight changes
 #+BEGIN_SRC emacs-lisp
@@ -653,7 +653,7 @@ Absolute TODO, I'd like to yank images from clipboard and image is to be stored 
 *** Zettelcasten
 Let's set the zettel dir explicitly
 #+BEGIN_SRC emacs-lisp
-(setq ztl-directory (concat org-directory "/ztl"))
+(setq ztl-directory org-directory)
 #+END_SRC
 **** org-roam
 Org-roam - the "engine" for zettelcasten
@@ -797,8 +797,32 @@ General publishing configuration. It's a huge TODO. One day I'll enable [[*org-r
   :mode "\\.scad\\'"
   ;; :config
   ;; (linum-mode 1)
-  )
+  :bind (
+	 ("C-<left>" . scad-preview-translate-y+)
+	 ("C-<right>" . scad-preview-translate-y-)
+	 ("C-<down>" . scad-preview-rotate-y+)
+	 ("C-<up>" . scad-preview-rotate-y-)
+	 ))
 #+END_SRC
+** Embedded development
+*** TODO Rust
+#+begin_src emacs-lisp
+  (use-package rust-mode)
+  (use-package cargo
+    :hook (rust-mode . cargo-minor-mode))
+#+end_src
+*** Platformio
+#+begin_src emacs-lisp
+  (use-package platformio-mode
+    :custom
+    (platformio-mode-keymap-prefix (kbd "C-c p"))
+    :hook
+    (c++-mode . platformio-conditionally-enable))
+#+end_src
+*** TODO C++
+Lots of todos
+**** CMake
+
 
 * Global keys
 Should be mostly moved to :bind
