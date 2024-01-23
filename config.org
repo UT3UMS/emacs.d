@@ -143,7 +143,7 @@ Pick the desired font and tune the settings. By <2023-08-30 Wed> I use [[https:/
 #+NAME: font config
 #+BEGIN_SRC emacs-lisp
 ;; (set-frame-font "Inconsolata 12" nil t)
-(set-face-attribute 'default nil :font "Iosevka Fixed Medium Extended" :height 110)
+(set-face-attribute 'default nil :font "Iosevka Fixed Medium Extended" :height 150)
 ;; (set-face-attribute 'default nil :font "JuliaMono Medium" :height 118)
 #+END_SRC
 *** WAIT Transparency
@@ -474,6 +474,15 @@ Dokcer is a part of everyday life now. I've seen an integration in VSCode and I 
   :ensure t
   :bind ("C-c d" . docker))
 #+END_SRC
+
+#+NAME: docker-mode
+#+BEGIN_SRC  emacs-lisp
+(use-package dockerfile-mode
+  :ensure t)
+
+(use-package docker-compose-mode
+  :ensure t)
+#+END_SRC
 ** Web development
 *** Typescript server
 Disabled additional modes, like [[Autocompletion][company]], for this listing. But better be enabled later.
@@ -586,6 +595,19 @@ My favorite mode for the web-development
 #+END_SRC
 ** Org-mode and zettelcasten
 To process this config on startup, =org-mode= is initialized in [[file+emacs:./init.el][=./init.el=]]. Here I'll setup additional components, like =org-roam=
+*** Org-modern styles
+Spotted this package and decided to try
+#+NAME: Modern org styles
+#+BEGIN_SRC emacs-lisp
+(use-package org-modern
+  :after org-roam
+  ;; :custom
+  ;; (org-modern-priority nil)
+  ;(org-modern-hide-stars nil)
+  :hook
+  (org-mode . org-modern-mode)
+  (org-agenda-finalize . org-modern-agenda))
+#+END_SRC
 *** Babel
 Main babel setup
 #+NAME: Babel transpiler
@@ -795,14 +817,12 @@ General publishing configuration. It's a huge TODO. One day I'll enable [[*org-r
 (use-package scad-mode
   :ensure t
   :mode "\\.scad\\'"
-  ;; :config
-  ;; (linum-mode 1)
-  :bind (
-	 ("C-<left>" . scad-preview-translate-y+)
-	 ("C-<right>" . scad-preview-translate-y-)
-	 ("C-<down>" . scad-preview-rotate-y+)
-	 ("C-<up>" . scad-preview-rotate-y-)
-	 ))
+  :hook (scad-preview-mode . (lambda ()
+                               (local-set-key (kbd "C-<left>") 'scad-preview-translate-y+)
+                               (local-set-key (kbd "C-<right>") 'scad-preview-translate-y-)
+                               (local-set-key (kbd "C-<down>") 'scad-preview-rotate-y+)
+                               (local-set-key (kbd "C-<up>") 'scad-preview-rotate-y-)))
+  )
 #+END_SRC
 ** Embedded development
 *** TODO Rust
