@@ -275,6 +275,15 @@ Here will be company, I believe. Comment it out and set up propperly later. [[ht
   (setq company-minimum-prefix-length 3)
   (setq company-idle-delay 0))
 #+END_SRC
+*** Rainbow Delimiters
+#+NAME: rainbow delimiters
+#+BEGIN_SRC emacs-lisp
+(use-package rainbow-delimiters
+  :config
+  (progn
+    ;; Enable in all programming-related modes
+    (add-hook 'prog-mode-hook #'rainbow-delimiters-mode)))
+#+END_SRC
 *** Helm
 The UI framework I stick to
 Used some code from [[https://github.com/arichiardi/emacs.d/blob/136927800873f1d3cc91e90cf7b4a548d0f72d93/packs/dev/foundation-pack/config/helm-conf.el#L85][here]].
