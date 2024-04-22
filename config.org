@@ -97,6 +97,11 @@ Need to investigate what's cool can I do with emacs server
 (setq create-lockfiles nil)
 ;; disable tabs indent
 (setq indent-tabs-mode nil)
+
+;; Tabs are part of Makefile so have to enable it
+(add-hook 'makefile-mode-hook
+          (lambda ()
+            (setq-local indent-tabs-mode t)))
 #+END_SRC
 *** Scrolling
 #+BEGIN_SRC emacs-lisp
@@ -129,9 +134,10 @@ Need to investigate what's cool can I do with emacs server
 *** Custom theme
 I prefer [[https://github.com/greduan/emacs-theme-gruvbox][gruvbox-theme]]
 #+BEGIN_SRC emacs-lisp
-(setq custom-safe-themes t)
-(load-theme 'gruvbox t)
-(load-theme 'gruvbox-dark-hard t)
+;; (setq custom-safe-themes t)
+(use-package gruvbox-theme
+  :init
+  (load-theme 'gruvbox-dark-medium t)) ;; We need to add t to trust this package
 #+END_SRC
 
 hint :: to list all fonts on system just use
@@ -420,6 +426,18 @@ Project management framework
     ;;(add-hook 'flycheck-mode-hook 'my/use-eslint-from-node-modules)
     ))
 #+END_SRC
+*** Flyspell
+Spellcheck
+#+NAME: enabling flyspell (with =ispell=)
+#+BEGIN_SRC  emacs-lisp
+(use-package flyspell
+  :ensure t
+  :defer t
+  :init
+  (add-hook 'text-mode-hook 'flyspell-mode)
+  (add-hook 'prog-mode-hook 'flyspell-prog-mode)
+  )
+#+END_SRC
 *** Tramp
 #+BEGIN_SRC emacs-lisp
 ;;disable backups of files edited with tramp
@@ -605,6 +623,11 @@ My favorite mode for the web-development
     :hook ((js-mode js2-mode css-mode sgml-mode web-mode) . prettier-mode)
     :init (setq prettier-pre-warm 'none)))
 #+END_SRC
+*** Nginx config
+#+NAME: nginx conf
+#+BEGIN_SRC emacs-lisp
+(use-package nginx-mode)
+#+END_SRC
 ** Org-mode and zettelcasten
 To process this config on startup, =org-mode= is initialized in [[file+emacs:./init.el][=./init.el=]]. Here I'll setup additional components, like =org-roam=
 *** Org-modern styles
@@ -641,7 +664,8 @@ Main babel setup
      (python .t)
      (shell . t)
      (scheme . t)
-     (js . t))))
+     (js . t)
+     )))
 #+END_SRC
 **** Python
 #+NAME: Enable for Python
@@ -672,8 +696,35 @@ Yanks a =link=, using html>head>title as =description=
   :bind
   ("C-c i" . 'org-cliplink))
 #+END_SRC
-*** TODO org yank images
+*** IN-PROGRESS org yank images
 Absolute TODO, I'd like to yank images from clipboard and image is to be stored in certain directory (i believe something like =./files/%buffername%= for ztl)
+#+NAME: org-download
+#+BEGIN_SRC emacs-lisp
+(use-package org-download
+  :after org
+  :demand t
+
+  :commands (org-download-enable
+             org-download-yank
+             org-download-screenshot)
+
+  :config
+  (setq org-startup-with-inline-images t)
+  (setq org-download-display-inline-images t)
+  (setq org-download-method 'attach)
+  (setq org-download-file-format-function #'identity)
+  (setq-default org-download-image-dir
+              (file-name-as-directory
+               (concat "./files/"
+                       (file-name-base (or buffer-file-name ""))
+                       "/")))
+  (defun org-download-annotate-default (link)
+      "Annotate LINK with the time of download."
+      (make-string 0 ?\s))
+  ;; (setq org-download-screenshot-method "screencapture -i %s")
+
+  :hook ((org-mode dired-mode) . org-download-enable))
+#+END_SRC
 *** helm-org
 [[*Helm][Helm]] menues for org actions
 #+BEGIN_SRC emacs-lisp
