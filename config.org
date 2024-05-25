@@ -232,6 +232,11 @@ Automatically insert closing delimiter
 #+BEGIN_SRC emacs-lisp
 (setq make-backup-files nil)
 #+END_SRC
+*** Modeline
+#+NAME: modeline customization
+#+BEGIN_SRC emacs-lisp
+;; no
+#+END_SRC
 * Modes
 ** Management
 Modes used mostly everywhere: [[*Version control][interaction with version control]], [[*Helm][custom menues]]
@@ -239,24 +244,29 @@ Modes used mostly everywhere: [[*Version control][interaction with version contr
 I was using =multi-term= along with =helm-mt= for ages. But Author suggests [[https://github.com/manateelazycat/aweshell][aweshell]] - a multi-term featured eshell. I need to give it a look one day
 #+BEGIN_SRC emacs-lisp
 (use-package multi-term
-  :custom
-  (multi-term-program "/bin/zsh"))
+  :bind
+  ( "C-!" . (lambda ()
+    	      (interactive)
+    	      (funcall #'multi-term-dedicated-open)
+    	      (funcall #'multi-term-dedicated-select))
+    :custom
+    (multi-term-program "/bin/zsh"))
 
-;; Disabling yas here
-(add-hook 'term-mode-hook (lambda()
-            (yas-minor-mode -1)))
+  ;; Disabling yas here
+  (add-hook 'term-mode-hook (lambda()
+                              (yas-minor-mode -1)))
 
-;; Load shell variables to emacs
-(use-package exec-path-from-shell
-  :ensure t
-  :config
-  (setq exec-path-from-shell-check-startup-files nil)
-  ;; http://stackoverflow.com/questions/35286203/exec-path-from-shell-message-when-starting-emacs
-  (when (string= system-type "gnu/linux")
-    (exec-path-from-shell-initialize)))
+  ;; Load shell variables to emacs
+  (use-package exec-path-from-shell
+    :ensure t
+    :config
+    (setq exec-path-from-shell-check-startup-files nil)
+    ;; http://stackoverflow.com/questions/35286203/exec-path-from-shell-message-when-starting-emacs
+    (when (string= system-type "gnu/linux")
+      (exec-path-from-shell-initialize)))
 
-(use-package helm-mt
-  :after multi-term)
+  (use-package helm-mt
+    :after multi-term)
 #+END_SRC
 *** Version control
 Magit is the only option here :)
