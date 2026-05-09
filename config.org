@@ -142,9 +142,9 @@ Need to investigate what's cool can I do with emacs server
 *** Custom theme
 I prefer [[https://github.com/greduan/emacs-theme-gruvbox][gruvbox-theme]]
 #+BEGIN_SRC emacs-lisp
-(use-package dracula-theme
+(use-package gruvbox-theme
   :ensure t
-  :config (load-theme ‘dracula-theme t))
+  :config (load-theme ‘gruvbox-theme t))
 #+END_SRC
 
 hint :: to list all fonts on system just use
