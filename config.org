@@ -382,28 +382,12 @@ Used some code from [[https://github.com/arichiardi/emacs.d/blob/136927800873f1d
      ("C-x C-r" . helm-recentf) ;; Select recently saved files
      ("C-c i"   . helm-imenu) ;; Select document heading
      ("M-y"     . helm-show-kill-ring) ;; Show the kill ring
-     ("M-i"     . helm-swoop)  ;; Swoop
-     ("C-x M-i" . helm-multi-swoop-all)  ;; Swoop
-     ("C-c M-i" . helm-multi-swoop-projectile)  ;; Swoop
+     ("M-i"     . helm-occur)              ;; current buffer
+     ("C-x M-i" . helm-multi-occur-all)    ;; all buffers
+    ;;  ("C-c M-i" . helm-multi-swoop-projectile)  ;; Swoop
      :map helm-map
      ("C-z" . helm-select-action)
      ("<tab>" . helm-execute-persistent-action)))
-
-(use-package helm-ag
-  :after helm
-  :custom
-  (helm-ag-base-command "ag --nocolor --nogroup --ignore-case")
-  (helm-ag-command-option "--all-text")
-  (helm-ag-insert-at-point 'symbol)
-  (helm-ag-use-grep-ignore-list t))
-
-(use-package helm-swoop
-  :after helm
-  :custom
-  (help-swoop-pattern "")
-  (helm-swoop-use-line-number-face t)
-  :bind
-  ("M-i" . helm-swoop))
 #+END_SRC
 *** Projectile
 Project management framework
@@ -415,6 +399,8 @@ Project management framework
   :delight '(:eval (concat "" (projectile-project-name)))
   :config
   ;; Pretty standard to have this setup, setting it globally
+  (projectile-mode +1)
+  (define-key projectile-command-map (kbd "s s") 'helm-do-grep-ag))
   (projectile-update-project-type 'clojure-cli
                                   :test-dir "test/"
                                   :src-dir "src/")
