@@ -2,7 +2,7 @@
 
 #+OPTIONS: ':nil *:t -:t ::t <:t H:4 \n:nil ^:t arch:headline
 #+OPTIONS: author:t broken-links:nil c:nil creator:nil
-#+OPTIONS: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:t
+#+OPTIONS: d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:nil
 #+OPTIONS: p:nil pri:nil prop:nil stat:t tags:t tasks:nil tex:t
 #+OPTIONS: timestamp:t title:t toc:t todo:t |:t
 
@@ -74,7 +74,15 @@ Need to investigate what's cool can I do with emacs server
 #+BEGIN_SRC emacs-lisp
 (line-number-mode 1)
 (column-number-mode 1)
-(global-visual-line-mode 1) ;; auto breakline
+;; auto breakline
+(global-visual-line-mode 1)
+(setq-default fill-column 80)
+(add-hook 'text-mode-hook 'auto-fill-mode)
+(add-hook 'prog-mode-hook 'auto-fill-mode)
+
+;; I don't like it in org
+(add-hook 'org-mode-hook (lambda () (auto-fill-mode -1)))
+
 (server-start) ;; enables emacsclient in console
 #+END_SRC
 *** Setup behaviour of new windows/bell/splash/...
@@ -134,10 +142,9 @@ Need to investigate what's cool can I do with emacs server
 *** Custom theme
 I prefer [[https://github.com/greduan/emacs-theme-gruvbox][gruvbox-theme]]
 #+BEGIN_SRC emacs-lisp
-;; (setq custom-safe-themes t)
-(use-package gruvbox-theme
-  :init
-  (load-theme 'gruvbox-dark-medium t)) ;; We need to add t to trust this package
+(use-package dracula-theme
+  :ensure t
+  :config (load-theme ‘dracula-theme t))
 #+END_SRC
 
 hint :: to list all fonts on system just use
@@ -232,10 +239,43 @@ Automatically insert closing delimiter
 #+BEGIN_SRC emacs-lisp
 (setq make-backup-files nil)
 #+END_SRC
+*** Persistent scratch buffers
+I used to store some usefull info in there and I'd to preserve them through random reboots
+#+NAME: persistent-scratch
+#+BEGIN_SRC emacs-lisp
+(use-package persistent-scratch
+  :config
+  (persistent-scratch-setup-default))
+#+END_SRC
 *** Modeline
 #+NAME: modeline customization
 #+BEGIN_SRC emacs-lisp
 ;; no
+#+END_SRC
+*** WAIT AI agents integration
+#+NAME: Claude-Sonnet
+#+BEGIN_SRC emacs-lisp
+;; (use-package gptel
+;;   :ensure t
+;;   :config
+;;   (setq gptel-model "claude-sonnet-4-5-20250929"
+;;         gptel-backend (gptel-make-anthropic "Claude"
+;;                         :stream t
+;;                         :key (getnev "ANTHROPIC_API_KEY"))
+
+;;   ;; Optional: Set default parameters
+;;   (setq gptel-default-mode 'org-mode)
+
+;;   ;; Add additional backends
+;;   (setq gptel-directives
+;;         '((default . "You are a helpful assistant.")
+;;           (programmer . "You are an expert programmer focused on clean, efficient code.")
+;;           (writer . "You are a skilled writer helping with clear, engaging prose.")))
+
+;;   ;; Optional: Keybindings
+;;   :bind (("C-c g" . gptel-send)
+;;          ("C-c G" . gptel)))
+
 #+END_SRC
 * Modes
 ** Management
@@ -248,7 +288,7 @@ I was using =multi-term= along with =helm-mt= for ages. But Author suggests [[ht
   ( "C-!" . (lambda ()
     	      (interactive)
     	      (funcall #'multi-term-dedicated-open)
-    	      (funcall #'multi-term-dedicated-select))
+    	      (funcall #'multi-term-dedicated-select)))
     :custom
     (multi-term-program "/bin/zsh"))
 
@@ -523,6 +563,15 @@ Dokcer is a part of everyday life now. I've seen an integration in VSCode and I 
 (use-package docker-compose-mode
   :ensure t)
 #+END_SRC
+*** NixOS integration
+Enable syntax highlight for *.nix files:
+#+NAME: nix-mode
+#+BEGIN_SRC  emacs-lisp
+(use-package nix-mode
+  :mode "\\.nix\\'")
+
+(use-package ob-nix)
+#+END_SRC
 ** Web development
 *** Typescript server
 Disabled additional modes, like [[Autocompletion][company]], for this listing. But better be enabled later.
@@ -638,6 +687,46 @@ My favorite mode for the web-development
 #+BEGIN_SRC emacs-lisp
 (use-package nginx-mode)
 #+END_SRC
+*** Clojure
+Not only a web lang, but I'd to use it extensively for web.  [[https://github.com/emacs-berlin/emacs-berlin.org/blob/e2704734e65b522c52ae76d0eb7bb4a5eba10376/curriculum.org#L344][Taken from]]
+#+NAME: Clojure + Cider + Paredit
+#+BEGIN_SRC emacs-lisp
+(use-package clojure-mode
+  :ensure t
+  :config
+  (add-hook 'clojure-mode-hook 'cider-mode))
+
+  ;;;; Optional: add structural editing
+;;
+(use-package paredit
+  :ensure t
+  :config
+  (add-hook 'clojure-mode-hook 'paredit-mode))
+
+  ;;; Give matching parentheses matching colors
+;; (use-package rainbow-delimiters
+;;   :ensure t
+;;   :config
+;;   (add-hook 'clojure-mode-hook 'rainbow-delimiters-mode))
+
+  ;;; Integrated REPL environment
+(use-package cider
+  :ensure t
+  :config
+  (use-package cider-eval-sexp-fu :ensure t)
+  (use-package clj-refactor
+    :ensure t
+    :config
+    (add-hook 'clojure-mode-hook 'clj-refactor-mode)
+    (cljr-add-keybindings-with-prefix "C-c C-m")))
+#+END_SRC
+*** lua-script
+#+NAME: Lua-mode
+#+BEGIN_SRC emacs-lisp
+(use-package lua-mode
+  :ensure t
+  :defer t)
+#+END_SRC
 ** Org-mode and zettelcasten
 To process this config on startup, =org-mode= is initialized in [[file+emacs:./init.el][=./init.el=]]. Here I'll setup additional components, like =org-roam=
 *** Org-modern styles
@@ -652,6 +741,24 @@ Spotted this package and decided to try
   :hook
   (org-mode . org-modern-mode)
   (org-agenda-finalize . org-modern-agenda))
+#+END_SRC
+*** Org tables prettify
+#+NAME: Different color one by one
+#+BEGIN_SRC emacs-lisp
+(use-package org-table-color
+  :after org-table)
+#+END_SRC
+*** Org headings styles
+#+NAME: Make titles bigger
+#+BEGIN_SRC emacs-lisp
+(custom-set-faces
+  '(org-level-1 ((t (:inherit outline-1 :height 1.4))))
+  '(org-level-2 ((t (:inherit outline-2 :height 1.3))))
+  '(org-level-3 ((t (:inherit outline-3 :height 1.2))))
+  '(org-level-4 ((t (:inherit outline-4 :height 1.1))))
+  '(org-level-5 ((t (:inherit outline-5 :height 1.0))))
+  '(org-block ((t (:inherit block :height 0.8))))
+  (set-face-attribute 'org-document-title nil :height 2.0))
 #+END_SRC
 *** Babel
 Main babel setup
@@ -675,6 +782,7 @@ Main babel setup
      (shell . t)
      (scheme . t)
      (js . t)
+     (nix . t)
      )))
 #+END_SRC
 **** Python
@@ -724,16 +832,29 @@ Absolute TODO, I'd like to yank images from clipboard and image is to be stored 
   (setq org-download-method 'attach)
   (setq org-download-file-format-function #'identity)
   (setq-default org-download-image-dir
-              (file-name-as-directory
-               (concat "./files/"
-                       (file-name-base (or buffer-file-name ""))
-                       "/")))
+                (file-name-as-directory
+                 (concat "./files/"
+                         (file-name-base (or buffer-file-name ""))
+                         "/")))
   (defun org-download-annotate-default (link)
-      "Annotate LINK with the time of download."
-      (make-string 0 ?\s))
+    "Annotate LINK with the time of download."
+    (make-string 0 ?\s))
   ;; (setq org-download-screenshot-method "screencapture -i %s")
 
-  :hook ((org-mode dired-mode) . org-download-enable))
+  :hook ((org-mode dired-mode) . org-download-enable)
+  :bind  (:map org-mode-map (
+                             ;; ("s-Y" . org-download-screenshot)
+                             ("C-S-y" . org-download-yank))))
+#+END_SRC
+#+NAME: org-download clean
+#+BEGIN_SRC emacs-lisp  :eval never
+(use-package org-download
+  :after org
+  :custom (org-download-screenshot-method "spectacle -b -n -r -o %s")
+  :bind
+  (:map org-mode-map
+        (("C-S-y" . org-download-screenshot)
+         ("C-S-y" . org-download-yank))))
 #+END_SRC
 *** helm-org
 [[*Helm][Helm]] menues for org actions
@@ -766,7 +887,7 @@ Org-roam - the "engine" for zettelcasten
     (setq org-roam-capture-templates
           '(("d" "default" plain "%?"
              :if-new (file+head "${slug}.org"
-                                "#+OPTIONS: timestamp:t title:t toc:nil todo:t |:t\n#+TITLE: ${title}\n#+DATE: %T\n")
+                                "#+OPTIONS: timestamp:t title:t toc:nil todo:t |:t author:nil num:nil\n#+TITLE: ${title}\n#+DATE: %T\n")
              :unnarrowed t)))
     (setq org-roam-mode-sections
       '((org-roam-backlinks-section :unique t)
@@ -832,6 +953,13 @@ Deft - alternative "scanner" through ztl directory. Not needed anymore. Disable 
 	      (substring contents end-of-begin end)
 	    (format "%s" file))))))
 #+END_SRC
+*** LaTeX
+Not 100% tightly bound to org mode, but related in spirit.
+#+NAME: ACUTEX
+#+BEGIN_SRC  emacs-lisp
+(use-package auctex
+  :ensure t)
+#+END_SRC
 *** IN-PROGRESS Org export configurations
 General publishing configuration. It's a huge TODO. One day I'll enable [[*org-roam][zettelcasten]] to autoexport
 #+BEGIN_SRC emacs-lisp
@@ -874,11 +1002,13 @@ General publishing configuration. It's a huge TODO. One day I'll enable [[*org-r
 ;; Gemini mode
 (use-package ox-gemini
   :after org
-  :init (add-to-list 'org-export-backends 'gemini)))
+  :init (add-to-list 'org-export-backends 'gemini))
 
 ;; (use-package ox-mediawiki
 ;;   :after org)
-
+(add-to-list 'org-export-backends 'md)
+(use-package ox-gfm
+  :init (add-to-list 'org-export-backends 'gfm))
 ;; Dependent on `:publishing-function ` of `ox-publish`
 (use-package ox-wk
   :after org)
@@ -918,6 +1048,13 @@ General publishing configuration. It's a huge TODO. One day I'll enable [[*org-r
   (scad-preview-camera '(0 0 0 50 0 20 100))
   )
 #+END_SRC
+*** OpenFOAM
+OpenFOAM simulation config files need a dedicated mode for it
+[[https://github.com/ralph-schleicher/emacs-openfoam][Emacs-openfoam]] feel to be the only solution
+#+NAME: open-foam
+#+BEGIN_SRC emacs-lisp
+(use-package openfoam)
+#+END_SRC
 ** Embedded development
 *** TODO Rust
 #+begin_src emacs-lisp
@@ -936,7 +1073,16 @@ General publishing configuration. It's a huge TODO. One day I'll enable [[*org-r
 *** TODO C++
 Lots of todos
 **** CMake
-
+** TODO and investigate
+*** Suggested
+firefox-javascript-repl        0.9.5          available    gnu      Jack into Firefox
+org-rich-yank                  20240302.659   available    melpa    Paste with org-mode markup and link to source
+org-roam-bibtex                20240229.1913  available    melpa    Org Roam meets BibTeX
+org-roam-ql                    20240721.306   available    melpa    Interface to query and view results from org-roam
+org-roam-ql-ql                 20240721.306   available    melpa    Intgrating org-roam and org-ql
+org-roam-timestamps            20221104.1544  available    melpa    Keep track of modification times for org-roam
+org-wc                         20200731.2244  available    melpa    Count words in org mode trees.
+org-web-tools                  20231220.1515  available    melpa    Display and capture web content with Org-mode
 
 * Global keys
 Should be mostly moved to :bind
