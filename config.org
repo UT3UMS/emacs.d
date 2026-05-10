@@ -762,7 +762,7 @@ Main babel setup
      (python . t)
      (clojure . t)
      (C . t)
-     (typescript .t)
+     ;; (typescript .t)
      (dot . t)
      (python .t)
      (shell . t)
