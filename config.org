@@ -783,14 +783,14 @@ Main babel setup
 **** Typescript
 #+NAME: TS support
 #+BEGIN_SRC emacs-lisp
-(use-package ob-typescript
-  :ensure t
-  :requires typescript-mode
-  :after org
-  :config
-  (org-babel-do-load-languages 'org-babel-load-languages
-			       (append org-babel-load-languages
-				       '((typescript . t)))))
+;; (use-package ob-typescript
+;;   :ensure t
+;;   :requires typescript-mode
+;;   :after org
+;;   :config
+;;   (org-babel-do-load-languages 'org-babel-load-languages
+;; 			       (append org-babel-load-languages
+;; 				       '((typescript . t)))))
 #+END_SRC
 *** org-cliplink
 Yanks a =link=, using html>head>title as =description=
