@@ -144,7 +144,7 @@ I prefer [[https://github.com/greduan/emacs-theme-gruvbox][gruvbox-theme]]
 #+BEGIN_SRC emacs-lisp
 (use-package gruvbox-theme
   :ensure t
-  :config (load-theme ‘gruvbox-dark-hard t))
+  :config (load-theme 'gruvbox-dark-hard t))
 #+END_SRC
 
 hint :: to list all fonts on system just use
