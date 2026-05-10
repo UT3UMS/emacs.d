@@ -400,7 +400,7 @@ Project management framework
   :config
   ;; Pretty standard to have this setup, setting it globally
   (projectile-mode +1)
-  (define-key projectile-command-map (kbd "s s") 'helm-do-grep-ag))
+  (define-key projectile-command-map (kbd "s s") 'helm-do-grep-ag)
   (projectile-update-project-type 'clojure-cli
                                   :test-dir "test/"
                                   :src-dir "src/")
