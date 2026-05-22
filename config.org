@@ -163,8 +163,8 @@ Pick the desired font and tune the settings. By <2023-08-30 Wed> I use [[https:/
 *** WAIT Transparency
 Not working though. I believe it's problem with compiling emacs. [[https://kristofferbalintona.me/posts/202206071000/][True Emacs Transparency]]
 #+BEGIN_SRC emacs-lisp
-;; (set-frame-parameter (selected-frame) 'alpha '(100 50))
-;; (add-to-list 'default-frame-alist '(alpha 100 50))
+(set-frame-parameter (selected-frame) 'alpha '(100 100))
+(add-to-list 'default-frame-alist '(alpha 100 100))
 #+END_SRC
 *** Highlight changes
 #+BEGIN_SRC emacs-lisp
