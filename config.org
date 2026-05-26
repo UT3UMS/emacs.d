@@ -399,17 +399,24 @@ Project management framework
   ;; Pretty standard to have this setup, setting it globally
   (projectile-mode +1)
   (define-key projectile-command-map (kbd "s s") 'helm-do-grep-ag)
+
+  ;; ripgrep everywhere: search (s s, via helm-ag) + file-find (f, alien indexing)
+  (setq helm-ag-base-command "rg --vimgrep --no-heading --smart-case"
+        helm-ag-use-grep-ignore-list nil          ; let rg own ignoring (kills *.o: os error 2)
+        projectile-generic-command "rg --files --hidden --null") ; --null required; git projects use git ls-files
+
   (projectile-update-project-type 'clojure-cli
                                   :test-dir "test/"
                                   :src-dir "src/")
-  (projectile-register-project-type 'yarn '("yarn-lock.json")
+  (projectile-register-project-type 'yarn '("yarn.lock")          ; was yarn-lock.json — never matched
                                     :compile "yarn install"
                                     :test "yarn test"
                                     :run "yarn start")
-  (projectile-register-project-type 'npm '("npm-lock.json")
+  (projectile-register-project-type 'npm '("package-lock.json")   ; was npm-lock.json — never matched
                                     :compile "npm ci"
                                     :test "npm test"
                                     :run "npm run")
+  ;; NOTE: under 'alien indexing this is ignored — put node_modules in .gitignore/.ignore instead
   (setq projectile-globally-ignored-directories
         (append '("node_modules") projectile-globally-ignored-directories))
 
@@ -418,8 +425,8 @@ Project management framework
   (projectile-idle-timer-seconds 60)
   (projectile-indexing-method 'alien)
   (projectile-enable-caching t)
-  (projectile-switch-project-action 'projectile-dired)
-  (projectile-remember-window-configs t )
+  ;; removed duplicate projectile-switch-project-action 'projectile-dired (was overridden below)
+  (projectile-remember-window-configs t)
   (projectile-completion-system 'helm)
   (projectile-switch-project-action 'helm-projectile)
   :bind-keymap
