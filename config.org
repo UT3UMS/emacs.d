@@ -98,9 +98,8 @@ Need to investigate what's cool can I do with emacs server
 (setq scroll-preserve-screen-position t)
 (setq switch-to-buffer-preserve-window-point t)
 ;; buffers split
-(setq split-height-threshold nil)
-(setq split-width-threshold 160)
-;; file save property
+(setq split-height-threshold nil)   ; never split below
+(setq split-width-threshold 80)    ; split right whenever frame ≥ ~80 cols;; file save property
 (setq require-final-newline 't)
 (setq create-lockfiles nil)
 ;; disable tabs indent
