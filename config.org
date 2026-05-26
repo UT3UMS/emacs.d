@@ -398,7 +398,7 @@ Project management framework
   :config
   ;; Pretty standard to have this setup, setting it globally
   (projectile-mode +1)
-  (define-key projectile-command-map (kbd "s s") 'helm-do-grep-ag)
+  (define-key projectile-command-map (kbd "s s") 'helm-projectile-ag)
 
   ;; ripgrep everywhere: search (s s, via helm-ag) + file-find (f, alien indexing)
   (setq helm-ag-base-command "rg --vimgrep --no-heading --smart-case"
