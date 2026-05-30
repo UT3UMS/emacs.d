@@ -503,7 +503,7 @@ Project management framework
   (dirvish-quick-access-entries
    '(("h" "~/"                    "Home")
      ("n" "~/nixos-config/"       "NixOS config")
-     ("q" "~/src/qutebrowser-config/" "Qute config")
+     ("s" "~/src"                 "SRC")
      ("p" "~/Pictures/"           "Pictures")
      ("d" "~/Downloads/"          "Downloads")))
   ;; Columns shown next to the filename
