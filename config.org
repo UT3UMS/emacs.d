@@ -448,6 +448,38 @@ Project management framework
 #+END_SRC
 *** TODO Dired
 [[https://github.com/alexluigit/dirvish][GitHub - alexluigit/dirvish: A polished Dired with batteries included.]]
+#+NAME: dired config
+#+BEGIN_SRC emacs-lisp
+;; Dired — file manager
+(use-package dired
+  :ensure nil  ; built-in
+  :custom
+  (dired-listing-switches "-alh --group-directories-first")  ; human sizes, dirs first
+  (dired-recursive-copies 'always)
+  (dired-recursive-deletes 'always)
+  (dired-dwim-target t)         ; if two dired windows open, copy/move targets the other
+  (dired-auto-revert-buffer t)  ; refresh listing on revisit
+  :bind (:map dired-mode-map
+              ("C-c C-q" . wdired-change-to-wdired-mode)))  ; if you want C-c prefix
+
+;; Hide the "total 42 -rw-r--r--..." chrome by default (toggle with `(`)
+(use-package dired-x
+  :ensure nil
+  :hook (dired-mode . dired-hide-details-mode))
+
+;; Subtree expand — view subdirectories inline, like a tree
+(use-package dired-subtree
+  :after dired
+  :bind (:map dired-mode-map
+              ("<tab>"     . dired-subtree-toggle)
+              ("<backtab>" . dired-subtree-cycle)))
+
+(use-package image-dired
+  :ensure nil
+  :custom
+  (image-dired-thumb-size 200)
+  (image-dired-thumbs-per-row 5))
+#+END_SRC
 *** Yasnippet
 #+BEGIN_SRC emacs-lisp
 (use-package yasnippet
