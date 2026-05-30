@@ -159,6 +159,17 @@ Pick the desired font and tune the settings. By <2023-08-30 Wed> I use [[https:/
 (set-face-attribute 'default nil :font "Iosevka Fixed Medium Extended" :height 150)
 ;; (set-face-attribute 'default nil :font "JuliaMono Medium" :height 118)
 #+END_SRC
+*** Nerd-fonts
+#+NAME: nerd fonts installing through use-package
+#+BEGIN_SRC emacs-lisp
+;; (use-package nerd-icons
+;;   :config
+;;   ;; run once: M-x nerd-icons-install-fonts RET
+;;   )
+
+;; (use-package nerd-icons-dired
+;;   :hook (dired-mode . nerd-icons-dired-mode))
+#+END_SRC
 *** WAIT Transparency
 Not working though. I believe it's problem with compiling emacs. [[https://kristofferbalintona.me/posts/202206071000/][True Emacs Transparency]]
 #+BEGIN_SRC emacs-lisp
@@ -499,7 +510,6 @@ Project management framework
   (dirvish-attributes
    '(vc-state          ; git status indicator
      subtree-state     ; expand/collapse arrows
-     all-the-icons     ; nerd-font icons
      collapse          ; collapse single-child dirs
      git-msg           ; last commit msg per file
      file-time
