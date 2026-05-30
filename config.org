@@ -480,6 +480,53 @@ Project management framework
   (image-dired-thumb-size 200)
   (image-dired-thumbs-per-row 5))
 #+END_SRC
+*** Dirvish
+#+NAME: dirvish - better dired
+#+BEGIN_SRC emacs-lisp
+(use-package dirvish
+  :init
+  ;; Replace dired globally — every `find-file` on a directory gets dirvish
+  (dirvish-override-dired-mode)
+  :custom
+  ;; Sidebar quick-access list — adjust to your dirs
+  (dirvish-quick-access-entries
+   '(("h" "~/"                    "Home")
+     ("n" "~/nixos-config/"       "NixOS config")
+     ("q" "~/src/qutebrowser-config/" "Qute config")
+     ("p" "~/Pictures/"           "Pictures")
+     ("d" "~/Downloads/"          "Downloads")))
+  ;; Columns shown next to the filename
+  (dirvish-attributes
+   '(vc-state          ; git status indicator
+     subtree-state     ; expand/collapse arrows
+     all-the-icons     ; nerd-font icons
+     collapse          ; collapse single-child dirs
+     git-msg           ; last commit msg per file
+     file-time
+     file-size))
+  ;; Don't show preview for huge files / binaries — fast on 8 GB
+  (dirvish-preview-disabled-exts '("iso" "bin" "exe" "gpg" "elc" "eln"))
+  (dirvish-mode-line-format
+   '(:left (sort symlink) :right (omit yank index)))
+  :config
+  ;; Hide dotfiles by default; toggle with C-x M-o
+  (setq dired-omit-files
+        (concat dired-omit-files "\\|^\\..*$"))
+  :bind
+  ;; Replace your C-x d so it opens dirvish UI directly
+  (("C-x d" . dirvish)
+   :map dirvish-mode-map
+   ("a"   . dirvish-quick-access)        ; jump to entries above
+   ("h"   . dired-up-directory)          ; emacs-leftward feel
+   ("l"   . dired-find-file)             ; emacs-rightward
+   ("TAB" . dirvish-subtree-toggle)      ; expand dir inline
+   ("M-t" . dirvish-layout-toggle)       ; toggle preview pane
+   ("M-s" . dirvish-setup-menu)          ; choose attributes interactively
+   ("M-f" . dirvish-history-go-forward)
+   ("M-b" . dirvish-history-go-backward)
+   ("y"   . dirvish-yank-menu)
+   ("?"   . dirvish-dispatch)))          ; transient with everything
+#+END_SRC
 *** Yasnippet
 #+BEGIN_SRC emacs-lisp
 (use-package yasnippet
