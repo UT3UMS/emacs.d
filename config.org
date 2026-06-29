@@ -321,6 +321,8 @@ I was using =multi-term= along with =helm-mt= for ages. But Author suggests [[ht
 Magit is the only option here :)
 #+BEGIN_SRC emacs-lisp
 (use-package magit
+  :config
+  (setq magit-log-section-commit-count 30)
   ;; :init
   ;; (message "Loading Magit!")
   ;; :config
@@ -568,6 +570,12 @@ Spellcheck
   (add-hook 'prog-mode-hook 'flyspell-prog-mode)
   )
 #+END_SRC
+*** Flymake
+#+begin_src emacs-lisp
+  (use-package flymake
+    :ensure nil
+    :hook (prog-mode . flymake-mode))
+#+end_src
 *** Tramp
 #+BEGIN_SRC emacs-lisp
 ;;disable backups of files edited with tramp
