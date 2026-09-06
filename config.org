@@ -261,31 +261,13 @@ I used to store some usefull info in there and I'd to preserve them through rand
 #+BEGIN_SRC emacs-lisp
 ;; no
 #+END_SRC
-*** WAIT AI agents integration
-#+NAME: Claude-Sonnet
-#+BEGIN_SRC emacs-lisp
-;; (use-package gptel
-;;   :ensure t
-;;   :config
-;;   (setq gptel-model "claude-sonnet-4-5-20250929"
-;;         gptel-backend (gptel-make-anthropic "Claude"
-;;                         :stream t
-;;                         :key (getnev "ANTHROPIC_API_KEY"))
-
-;;   ;; Optional: Set default parameters
-;;   (setq gptel-default-mode 'org-mode)
-
-;;   ;; Add additional backends
-;;   (setq gptel-directives
-;;         '((default . "You are a helpful assistant.")
-;;           (programmer . "You are an expert programmer focused on clean, efficient code.")
-;;           (writer . "You are a skilled writer helping with clear, engaging prose.")))
-
-;;   ;; Optional: Keybindings
-;;   :bind (("C-c g" . gptel-send)
-;;          ("C-c G" . gptel)))
-
-#+END_SRC
+*** Direnv
+Auto-activates nix-shell's env (incl. .venv) on cd/find-file
+#+begin_src emacs-lisp
+;; requires `direnv` binary on PATH and `direnv allow` run once per project
+(use-package envrc
+  :hook (after-init . envrc-global-mode))
+#+end_src
 * Modes
 ** Management
 Modes used mostly everywhere: [[*Version control][interaction with version control]], [[*Helm][custom menues]]
@@ -815,6 +797,12 @@ Not only a web lang, but I'd to use it extensively for web.  [[https://github.co
   :ensure t
   :defer t)
 #+END_SRC
+*** Python
+#+begin_src emacs-lisp
+;; 1. eglot for python (pyright must be on PATH inside the nix-shell/venv)
+(use-package python-mode
+  :hook (python-mode . eglot-ensure))
+#+end_src
 ** Org-mode and zettelcasten
 To process this config on startup, =org-mode= is initialized in [[file+emacs:./init.el][=./init.el=]]. Here I'll setup additional components, like =org-roam=
 *** Org-modern styles
