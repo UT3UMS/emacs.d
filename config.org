@@ -142,7 +142,10 @@ Need to investigate what's cool can I do with emacs server
 I prefer [[https://github.com/greduan/emacs-theme-gruvbox][gruvbox-theme]]
 #+BEGIN_SRC emacs-lisp
 (use-package gruvbox-theme :ensure t)
-(load-theme 'gruvbox-dark-hard t)
+(load-theme 'gruvbox-dark-medium t)
+(custom-set-faces
+ '(gnus-group-news-low       ((t (:weight bold   :foreground "#a89984"))))
+ '(gnus-group-news-low-empty ((t (:weight normal :foreground "#a89984")))))
 #+END_SRC
 
 hint :: to list all fonts on system just use
