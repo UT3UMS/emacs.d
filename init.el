@@ -1,4 +1,4 @@
-;;; init.el --- The Emacs init file. -*- lexical-binding: t; -*-
+;; -*- lexical-binding: t; -*-
 
 ;; source: https://github.com/zarkone/literally.el/blob/master/README.org
 (let ((gc-cons-threshold most-positive-fixnum))

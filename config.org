@@ -84,6 +84,10 @@ Need to investigate what's cool can I do with emacs server
 (add-hook 'org-mode-hook (lambda () (auto-fill-mode -1)))
 
 (server-start) ;; enables emacsclient in console
+;; Pre-def varibales to calm down compiter
+(defvar org-roam-v2-ack)
+(defvar org-roam-graph-link-builder)
+(defvar org-roam-complete-everywhere)
 #+END_SRC
 *** Setup behaviour of new windows/bell/splash/...
 #+BEGIN_SRC emacs-lisp
@@ -122,7 +126,7 @@ Need to investigate what's cool can I do with emacs server
 #+END_SRC
 *** Global clipboard
 #+BEGIN_SRC emacs-lisp
-(setq x-select-enable-clipboard t)
+(setq select-enable-clipboard t)
 (transient-mark-mode 1) ; highlight text selection
 (delete-selection-mode 1) ; delete seleted text when typing
 #+END_SRC
@@ -367,7 +371,7 @@ Used some code from [[https://github.com/arichiardi/emacs.d/blob/136927800873f1d
   ;; another useful command is (delete-dups extended-command-history)
   (setq history-delete-duplicates t)
   (when (executable-find "curl")
-    (setq helm-google-suggest-use-curl-p t))
+    (setq nelm-net-prefer-curl t))
   (add-to-list 'helm-sources-using-default-as-input 'helm-source-info-bash)
   (helm-mode 1)
   (helm-autoresize-mode 1)
@@ -451,7 +455,7 @@ Project management framework
 ;; (use-package persp-projectile
 ;;   :after (projectile perspective))
 
-(projectile-global-mode)
+(projectile-mode +1)
 #+END_SRC
 
 **** helm-pojectile
@@ -460,7 +464,7 @@ Project management framework
 (use-package helm-projectile
   :after helm
   :config
-  (helm-projectile-on))
+  (helm-projectile-mode))
 #+END_SRC
 *** TODO Dired
 [[https://github.com/alexluigit/dirvish][GitHub - alexluigit/dirvish: A polished Dired with batteries included.]]
@@ -581,17 +585,13 @@ Spellcheck
 #+end_src
 *** Tramp
 #+BEGIN_SRC emacs-lisp
-;;disable backups of files edited with tramp
-;; (add-to-list 'bkup-backup-directory-info
-;;              (list tramp-file-name-regexp ""))
-(setq tramp-bkup-backup-directory-info  nil)
-
-(setq tramp-ssh-controlmaster-options
-      "-o ControlMaster=auto -o ControlPath='tramp.%%C' -o ControlPersist=no -o ConnectTimeout=1")
-
-;; Pick SSH system agent
-(exec-path-from-shell-copy-env "SSH_AGENT_PID")
-(exec-path-from-shell-copy-env "SSH_AUTH_SOCK")
+(with-eval-after-load 'tramp
+  ;; `prog` is not a macro — it errors. with-eval-after-load already has an
+  ;; implicit progn, so just drop it.
+  (setq tramp-ssh-controlmaster-options
+        "-o ControlMaster=auto -o ControlPath='tramp.%%C' -o ControlPersist=no -o ConnectTimeout=1")
+  (exec-path-from-shell-copy-env "SSH_AGENT_PID")
+  (exec-path-from-shell-copy-env "SSH_AUTH_SOCK"))
 #+END_SRC
 *** TODO REST client
 [[https://github.com/jimeh/.emacs.d/blob/38d426d6165caf9b33aa381e4c06f11c9fe21704/modules/tools/siren-restclient.el][source]]
@@ -599,7 +599,7 @@ Spellcheck
 #+BEGIN_SRC emacs-lisp
 (use-package restclient
   :ensure t
-  :init
+  :custom
   ;; limit number of times vars are substituted
   (setq restclient-vars-max-passes 2)
   ;; use matching client certificates from ~/.authinfo
@@ -666,27 +666,21 @@ Enable syntax highlight for *.nix files:
 ** Web development
 *** Typescript server
 Disabled additional modes, like [[Autocompletion][company]], for this listing. But better be enabled later.
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :eval never
+;; no eval-when-compile / typescript-mode require needed anymore
 (use-package tide
   :ensure t
-  :after (typescript-mode) ;;(typescript-mode company flycheck)
-  :hook ((typescript-mode . tide-setup)
-         (typescript-mode . tide-hl-identifier-mode)
-         (before-save . tide-format-before-save))
+  :hook (web-mode . my/tide-web-mode-maybe)
   :bind (:map web-mode-map
-         ("C-c j" . tide-jsdoc-template)
-         :map typescript-mode-map
          ("C-c j" . tide-jsdoc-template))
   :config
-  (progn
-    ;; (flycheck-mode +1)
-    (setq flycheck-check-syntax-automatically '(save mode-enabled))))
-    ;; (eldoc-mode +1)
-    ;; tide-hl-identifier-mode +1)
-    ;; company is an optional dependency. You have to
-    ;; install it separately via package-install
-    ;; `M-x package-install [ret] company`
-    ;; (company-mode +1))
+  (defun my/tide-web-mode-maybe ()
+    "Enable tide only for TS/TSX buffers under web-mode."
+    (when (string-match-p "\\.tsx?\\'" (or buffer-file-name ""))
+      (tide-setup)
+      (tide-hl-identifier-mode)
+      (add-hook 'before-save-hook #'tide-format-before-save nil t)))
+  (setq flycheck-check-syntax-automatically '(save mode-enabled)))
 
 #+END_SRC
 *** Svelte
@@ -960,9 +954,9 @@ Absolute TODO, I'd like to yank images from clipboard and image is to be stored 
 *** Zettelcasten
 Let's set the zettel dir explicitly
 #+BEGIN_SRC emacs-lisp
+(defvar ztl-directory nil "Zettelkasten root.")
+(defvar ztl-exp-dir  "~/src/zettel.online" "Zettelkasten export dir.")
 (setq ztl-directory org-directory)
-(setq ztl-exp-dir "~/src/zettel.online")
-;; This have to be global for org-roam-id-smth command at least
 (setq org-roam-directory (file-truename ztl-directory))
 #+END_SRC
 **** org-roam
@@ -988,7 +982,7 @@ Org-roam - the "engine" for zettelcasten
         (concat (file-name-base file) ".html")))
     (setq org-roam-graph-link-builder 'org-roam-custom-link-builder)
 
-    (org-roam-setup)
+    (org-roam-db-autosync-enable)
     :bind (("C-c n f" . org-roam-node-find)
            ("C-c n R" . org-roam-node-random)
            (:map org-mode-map
