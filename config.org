@@ -555,33 +555,43 @@ Project management framework
   :config
   (yas-reload-all))
 #+END_SRC
-*** IN-PROGRESS Flycheck
-#+BEGIN_SRC emacs-lisp
-(use-package flycheck
-  :ensure t
-  :init
-  (progn
-    ;; (global-flycheck-mode)
-    ;;(add-hook 'flycheck-mode-hook 'my/use-eslint-from-node-modules)
-    ))
-#+END_SRC
 *** Flyspell
-Spellcheck
-#+NAME: enabling flyspell (with =ispell=)
-#+BEGIN_SRC  emacs-lisp
-(use-package flyspell
-  :ensure t
-  :defer t
-  :init
-  (add-hook 'text-mode-hook 'flyspell-mode)
-  (add-hook 'prog-mode-hook 'flyspell-prog-mode)
-  )
-#+END_SRC
-*** Flymake
+Spellcheck (aspell: en + uk). Nix: (aspellWithDicts (d: [ d.en d.uk ]))
 #+begin_src emacs-lisp
-  (use-package flymake
-    :ensure nil
-    :hook (prog-mode . flymake-mode))
+(use-package flyspell
+  :ensure nil                                   ; built in
+  :hook ((text-mode . flyspell-mode)
+         (prog-mode . flyspell-prog-mode))      ; comments and strings only
+  :custom
+  (ispell-program-name "aspell")
+  (ispell-dictionary "en_US")                   ; switch: M-x ispell-change-dictionary RET uk
+  (text-mode-ispell-word-completion nil))       ; Emacs 30: no word-list completion (none on NixOS)
+#+end_src
+*** Flymake
+Errors/lints, also what eglot (gopls) reports through
+#+begin_src emacs-lisp
+(use-package flymake
+  :ensure nil
+  :hook (prog-mode . flymake-mode)
+  :bind (:map flymake-mode-map
+              ("M-n" . flymake-goto-next-error)
+              ("M-p" . flymake-goto-prev-error)
+              ("C-c !" . flymake-show-buffer-diagnostics)))
+#+end_src
+*** Corfu
+Small suggestions popup
+#+begin_src emacs-lisp
+(use-package corfu
+  :ensure nil                                   ; t if it comes from package.el
+  :custom
+  (corfu-auto t)
+  (corfu-auto-delay 0.2)
+  (corfu-cycle t)                               ; wrap around the candidate list
+  (corfu-popupinfo-delay '(0.5 . 0.2))          ; docs popup next to the candidate
+  :init
+  (global-corfu-mode)
+  (corfu-popupinfo-mode)
+  (setq tab-always-indent 'complete))           ; TAB: indent, or complete if already indented
 #+end_src
 *** Tramp
 #+BEGIN_SRC emacs-lisp
@@ -844,14 +854,6 @@ Not only a web lang, but I'd to use it extensively for web.  [[https://github.co
               ("C-c r" . eglot-rename)
               ("C-c a" . eglot-code-actions)
               ("C-c f" . eglot-format-buffer)))
-
-(use-package corfu                              ; optional: completion popup while typing
-  :ensure nil
-  :custom
-  (corfu-auto t)
-  (corfu-auto-delay 0.2)
-  :init
-  (global-corfu-mode))
 
 ;; build/test without leaving Emacs
 (with-eval-after-load 'go-ts-mode
