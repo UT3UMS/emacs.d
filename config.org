@@ -812,6 +812,52 @@ Not only a web lang, but I'd to use it extensively for web.  [[https://github.co
   :ensure t
   :defer t)
 #+END_SRC
+*** go
+#+begin_src emacs-lisp
+(use-package go-ts-mode
+  :ensure nil                                   ; built in since Emacs 29
+  :mode (("\\.go\\'"     . go-ts-mode)
+         ("/go\\.mod\\'" . go-mod-ts-mode))
+  :custom
+  (go-ts-mode-indent-offset 4)                  ; gofmt uses tabs; this sets their display width
+  :hook
+  (go-ts-mode . eglot-ensure)                   ; start gopls automatically
+  (go-ts-mode . my/go-save-hooks)
+  :config
+  (defun my/go-save-hooks ()
+    "Organize imports and gofmt via gopls before saving."
+    (add-hook 'before-save-hook
+              (lambda () (ignore-errors (call-interactively #'eglot-code-action-organize-imports)))
+              nil t)
+    (add-hook 'before-save-hook #'eglot-format-buffer nil t)))
+
+(use-package eglot
+  :ensure nil
+  :custom
+  (eglot-autoshutdown t)                        ; stop gopls when the last Go buffer closes
+  :config
+  (setq-default eglot-workspace-configuration
+                '(:gopls (:staticcheck t          ; extra lint checks
+                          :gofumpt t              ; stricter gofmt
+                          :usePlaceholders t)))   ; fill in function arguments on completion
+  :bind (:map eglot-mode-map
+              ("C-c r" . eglot-rename)
+              ("C-c a" . eglot-code-actions)
+              ("C-c f" . eglot-format-buffer)))
+
+(use-package corfu                              ; optional: completion popup while typing
+  :ensure nil
+  :custom
+  (corfu-auto t)
+  (corfu-auto-delay 0.2)
+  :init
+  (global-corfu-mode))
+
+;; build/test without leaving Emacs
+(with-eval-after-load 'go-ts-mode
+  (define-key go-ts-mode-map (kbd "C-c t") (lambda () (interactive) (compile "go test ./...")))
+  (define-key go-ts-mode-map (kbd "C-c b") (lambda () (interactive) (compile "go build ./..."))))
+#+end_src
 ** Org-mode and zettelcasten
 To process this config on startup, =org-mode= is initialized in [[file+emacs:./init.el][=./init.el=]]. Here I'll setup additional components, like =org-roam=
 *** Org-modern styles
@@ -1168,7 +1214,6 @@ org-roam-ql-ql                 20240721.306   available    melpa    Intgrating o
 org-roam-timestamps            20221104.1544  available    melpa    Keep track of modification times for org-roam
 org-wc                         20200731.2244  available    melpa    Count words in org mode trees.
 org-web-tools                  20231220.1515  available    melpa    Display and capture web content with Org-mode
-
 * Global keys
 Should be mostly moved to :bind
 #+BEGIN_SRC emacs-lisp
